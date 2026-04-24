@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --green-dark: #1a3a2a;
+  --green-mid: #2d6a4f;
+  --green-light: #52b788;
+  --cream: #faf7f0;
+  --amber: #d4a017;
+}
+
+body {
+  background-color: var(--cream);
+  color: #1a1a1a;
+  font-family: var(--font-geist), system-ui, sans-serif;
+}
+
+/* Arabic verse typography */
+.arabic-text {
+  font-family: "Noto Naskh Arabic", "Scheherazade New", "Traditional Arabic", serif;
+  direction: rtl;
+  line-height: 2.2;
+  font-size: 1.5rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
