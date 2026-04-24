@@ -1,0 +1,21 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+#
+# --- INSTRUCTIONS ---
+# Type: feat, fix, docs, style, refactor, perf, test, chore, ci, revert
+# Scope: auth, api, llm, mission, ui, db, pwa, etc.
+# Subject: imperative mood, lowercase, no period, max 50 chars
+#
+# Example:
+# feat(llm): add prompt caching for mission generation
+#
+# Body (optional): explain WHY, not WHAT
+# - Can span multiple lines
+# - Wrapped at 72 characters
+#
+# Footer (optional):
+# - Closes #123
+# - Co-Authored-By: Name <email@example.com>
