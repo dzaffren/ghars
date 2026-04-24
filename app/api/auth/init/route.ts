@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import {
-  buildAuthUrl,
-  generatePKCE,
-  generateState,
-} from "@/lib/auth/qf-oauth";
+import { buildAuthUrl, generatePKCE, generateState } from "@/lib/auth/qf-oauth";
 
 export async function GET() {
   const { verifier, challenge } = generatePKCE();
@@ -27,5 +23,11 @@ export async function GET() {
   });
 
   const authUrl = buildAuthUrl(challenge, state);
+  if (process.env.DEBUG_AUTH === "1") {
+    return NextResponse.json({
+      authUrl,
+      redirect_uri: `${process.env.APP_URL}/api/auth/callback`,
+    });
+  }
   return NextResponse.redirect(authUrl);
 }
