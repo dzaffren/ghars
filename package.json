@@ -8,14 +8,6 @@
     "start": "next start",
     "prepare": "husky install"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "tsc --noEmit"
-    ],
-    "*.{ts,tsx,css}": [
-      "prettier --write"
-    ]
-  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",
     "@quranjs/api": "^2.2.0",

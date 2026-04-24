@@ -39,7 +39,10 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className="min-h-full bg-[#faf7f0] text-[#1a1a1a] antialiased">
+      <body
+        className="min-h-full bg-[#faf7f0] text-[#1a1a1a] antialiased"
+        suppressHydrationWarning
+      >
         <ServiceWorkerRegister />
         {children}
       </body>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getRequiredSession } from "@/lib/auth/session";
-import Link from "next/link";
+import Image from "next/image";
 
 export default async function Home() {
   const session = await getRequiredSession();
@@ -11,7 +11,15 @@ export default async function Home() {
       <div className="max-w-md w-full text-center space-y-8">
         {/* Logo / Hero */}
         <div className="space-y-3">
-          <div className="text-6xl">🌱</div>
+          <div className="flex justify-center">
+            <Image
+              src="/icons/logo.png"
+              alt="Ghars logo"
+              width={120}
+              height={120}
+              priority
+            />
+          </div>
           <h1 className="text-4xl font-bold tracking-tight text-[#1a3a2a]">
             Ghars
           </h1>
@@ -25,12 +33,12 @@ export default async function Home() {
 
         {/* CTA */}
         <div className="space-y-3">
-          <Link
+          <a
             href="/api/auth/init"
             className="block w-full rounded-xl bg-[#2d6a4f] text-white font-semibold py-4 px-6 hover:bg-[#1b4332] transition-colors text-center"
           >
             Sign in with Quran Foundation
-          </Link>
+          </a>
           <p className="text-xs text-[#aaa]">
             Uses your Quran.com account. No new password needed.
           </p>
