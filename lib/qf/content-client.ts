@@ -37,7 +37,12 @@ async function getContentToken(): Promise<string> {
   return cachedToken.token;
 }
 
-async function qfFetch(path: string, params?: Record<string, string>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function qfFetch(
+  path: string,
+  params?: Record<string, string>,
+  isRetry = false
+): Promise<any> {
   const token = await getContentToken();
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
@@ -50,6 +55,10 @@ async function qfFetch(path: string, params?: Record<string, string>) {
     },
     next: { revalidate: 3600 },
   });
+  if (res.status === 401 && !isRetry) {
+    cachedToken = null;
+    return qfFetch(path, params, true);
+  }
   if (!res.ok) throw new Error(`QF API error ${res.status} for ${path}`);
   return res.json();
 }
@@ -116,4 +125,8 @@ export async function fetchRandomVerse(): Promise<{
 
 export async function listRecitations() {
   return qfFetch("/resources/recitations");
+}
+
+export async function fetchChapters() {
+  return qfFetch("/chapters");
 }
