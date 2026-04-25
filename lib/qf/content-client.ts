@@ -1,9 +1,12 @@
 // Quran Foundation Content API client with client-credentials token caching
 
 const BASE_URL = process.env.QF_BASE_URL!;
-const CLIENT_ID = process.env.QF_CLIENT_ID!;
-const CLIENT_SECRET = process.env.QF_CLIENT_SECRET!;
-const QF_OAUTH_URL = process.env.QF_OAUTH_URL!;
+// Content API uses its own credentials + production OAuth (separate from user auth)
+const CLIENT_ID = process.env.QF_CONTENT_CLIENT_ID ?? process.env.QF_CLIENT_ID!;
+const CLIENT_SECRET =
+  process.env.QF_CONTENT_CLIENT_SECRET ?? process.env.QF_CLIENT_SECRET!;
+const CONTENT_OAUTH_URL =
+  process.env.QF_CONTENT_OAUTH_URL ?? process.env.QF_OAUTH_URL!;
 
 // In-memory token cache (per serverless function instance)
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -16,19 +19,31 @@ async function getContentToken(): Promise<string> {
 
   const body = new URLSearchParams({
     grant_type: "client_credentials",
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    scope: "content search",
+    scope: "content",
   });
+  // Fallback: if QF granted fewer scopes than we asked for, log what we got
+  // so we can see if the client lacks content access.
 
-  const res = await fetch(`${QF_OAUTH_URL}/oauth2/token`, {
+  const res = await fetch(`${CONTENT_OAUTH_URL}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    },
     body,
   });
 
-  if (!res.ok) throw new Error(`Content token fetch failed: ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Content token fetch failed: ${res.status} ${text}`);
+  }
   const data = await res.json();
+  console.log(
+    "[QF content token] granted scopes:",
+    data.scope,
+    "expires_in:",
+    data.expires_in
+  );
 
   cachedToken = {
     token: data.access_token,
@@ -59,7 +74,11 @@ async function qfFetch(
     cachedToken = null;
     return qfFetch(path, params, true);
   }
-  if (!res.ok) throw new Error(`QF API error ${res.status} for ${path}`);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`[QF API ${res.status}] ${url.toString()} → ${text}`);
+    throw new Error(`QF API error ${res.status} for ${path}`);
+  }
   return res.json();
 }
 
@@ -78,7 +97,7 @@ export async function fetchVerse(
   verseKey: string,
   recitationId = "7"
 ): Promise<VerseData> {
-  const data = await qfFetch(`/verses/${verseKey}`, {
+  const data = await qfFetch(`/verses/by_key/${verseKey}`, {
     translations: SAHEEH_TRANSLATION_ID,
     tafsirs: IBN_KATHIR_TAFSIR_ID,
     fields: "text_uthmani",
@@ -96,18 +115,49 @@ export async function fetchVerse(
   let audioUrl: string | null = null;
   try {
     const audioData = await qfFetch(
-      `/recitations/${recitationId}/audio-files`,
-      { per_page: "1", page: "1" }
+      `/recitations/${recitationId}/by_ayah/${verseKey}`
     );
-    const match = audioData.audio_files?.find(
-      (f: { verse_key: string; url: string }) => f.verse_key === verseKey
-    );
-    audioUrl = match?.url ?? null;
+    const raw = audioData.audio_files?.[0]?.url ?? null;
+    audioUrl = raw
+      ? raw.startsWith("http")
+        ? raw
+        : `https://verses.quran.com/${raw}`
+      : null;
+    console.log("[QF audio] raw:", raw, "→ resolved:", audioUrl);
   } catch {
     // Non-critical; audio is optional
   }
 
   return { verseKey, arabic, translation, tafsirSnippet, audioUrl };
+}
+
+export interface VerseWord {
+  text_uthmani: string;
+  translation: string;
+  transliteration: string;
+}
+
+// Fetches the word list for a verse. QF includes words when word_fields is set.
+// Returns only word-type tokens (filters out punctuation / sajda markers).
+export async function fetchVerseWords(verseKey: string): Promise<VerseWord[]> {
+  try {
+    const data = await qfFetch(`/verses/by_key/${verseKey}`, {
+      word_fields: "text_uthmani,translation,transliteration",
+      fields: "text_uthmani",
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const words: any[] = data.verse?.words ?? [];
+    return words
+      .filter((w) => w.char_type_name === "word" || !w.char_type_name)
+      .map((w) => ({
+        text_uthmani: w.text_uthmani ?? w.text ?? "",
+        translation: w.translation?.text ?? "",
+        transliteration: w.transliteration?.text ?? "",
+      }))
+      .filter((w) => w.text_uthmani && w.translation);
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchRandomVerse(): Promise<{
@@ -129,4 +179,40 @@ export async function listRecitations() {
 
 export async function fetchChapters() {
   return qfFetch("/chapters");
+}
+
+export interface ChapterVerse {
+  verse_key: string;
+  verse_number: number;
+  text_uthmani: string;
+  translation: string;
+}
+
+// Fetches all verses of a chapter with Saheeh translation.
+// QF paginates at 50 per page by default; we request 300 to cover the longest
+// chapter (Al-Baqarah, 286 verses) in a single round-trip.
+export async function fetchChapterVerses(
+  chapterId: number | string
+): Promise<ChapterVerse[]> {
+  const data = await qfFetch(`/chapters/${chapterId}/verses`, {
+    translations: SAHEEH_TRANSLATION_ID,
+    fields: "text_uthmani",
+    per_page: "300",
+    page: "1",
+  });
+
+  const verses: ChapterVerse[] = (data.verses ?? []).map(
+    (v: {
+      verse_key: string;
+      verse_number: number;
+      text_uthmani: string;
+      translations?: { text: string }[];
+    }) => ({
+      verse_key: v.verse_key,
+      verse_number: v.verse_number,
+      text_uthmani: v.text_uthmani ?? "",
+      translation: v.translations?.[0]?.text?.replace(/<[^>]+>/g, "") ?? "",
+    })
+  );
+  return verses;
 }

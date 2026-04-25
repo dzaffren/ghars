@@ -27,7 +27,9 @@ export const JUDGE_REFLECTION_SYSTEM = `You are a gentle, encouraging Islamic re
 Your role is to evaluate whether a user's written reflection plausibly demonstrates they attempted
 today's Quranic mission. Be generous and compassionate — people express their spiritual experiences differently.
 Accept the reflection if it shows any genuine engagement with the mission's theme, even partially.
-Only suggest a nudge if the reflection seems completely unrelated to the mission or is too vague to confirm any attempt.`;
+Only suggest a nudge if the reflection seems completely unrelated to the mission or is too vague to confirm any attempt.
+When you accept a reflection, provide one concrete next_step: a specific, actionable suggestion for how the user
+could deepen this practice tomorrow — grounded in their reflection, not generic.`;
 
 export function buildJudgeReflectionPrompt(
   mission: string,
@@ -40,5 +42,7 @@ User's reflection: "${reflection}"
 
 Evaluate the reflection. Score depth 1-5 (1=single word, 5=rich specific story).
 If the reflection shows genuine engagement with the mission theme, verdict=accepted.
-If completely unrelated or too vague, verdict=soft_nudge with a gentle one-sentence hint.`;
+If completely unrelated or too vague, verdict=soft_nudge with a gentle one-sentence hint.
+If accepted, next_step should be one concrete suggestion drawn from what they wrote — e.g. "Tomorrow, notice how
+this same quality appears when you interact with [person/situation they mentioned]." Keep it under 2 sentences.`;
 }

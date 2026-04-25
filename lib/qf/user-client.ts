@@ -1,6 +1,6 @@
 // Quran Foundation User API client (uses user's OAuth access token)
 
-const BASE_URL = process.env.QF_BASE_URL!;
+const BASE_URL = process.env.QF_USER_BASE_URL ?? process.env.QF_BASE_URL!;
 const CLIENT_ID = process.env.QF_CLIENT_ID!;
 
 function userFetch(

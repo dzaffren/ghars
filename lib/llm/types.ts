@@ -26,6 +26,7 @@ export interface JudgeReflectionResult {
   verdict: "accepted" | "soft_nudge";
   feedback: string;
   depthScore: number; // 1-5
+  nextStep?: string; // one concrete suggestion for tomorrow (only on accepted)
 }
 
 export interface LLMProvider {

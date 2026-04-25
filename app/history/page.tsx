@@ -1,132 +1,204 @@
 import { redirect } from "next/navigation";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import AppHeader from "@/components/AppHeader";
+import { getStreaks } from "@/lib/qf/user-client";
+import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
+
+// Build the last N days as YYYY-MM-DD strings (newest last for calendar order)
+function buildDateRange(days: number): string[] {
+  const result: string[] = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    result.push(d.toISOString().slice(0, 10));
+  }
+  return result;
+}
+
+// Group flat date array into weeks (rows of 7, starting from earliest date's weekday)
+function groupIntoWeeks(
+  dates: string[],
+  completedSet: Set<string>,
+  today: string
+) {
+  if (!dates.length) return [];
+  // Pad the front to align to Sunday (0)
+  const firstDate = new Date(dates[0] + "T00:00:00");
+  const startDow = firstDate.getDay(); // 0=Sun
+  const padded: (null | string)[] = Array(startDow)
+    .fill(null)
+    .concat(dates as string[]);
+  const weeks: {
+    date: string | null;
+    completed: boolean;
+    isToday: boolean;
+  }[][] = [];
+  for (let i = 0; i < padded.length; i += 7) {
+    weeks.push(
+      padded.slice(i, i + 7).map((d) => ({
+        date: d,
+        completed: d !== null && completedSet.has(d),
+        isToday: d === today,
+      }))
+    );
+  }
+  return weeks;
+}
+
+const DOW_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default async function HistoryPage() {
   const session = await getRequiredSession();
   if (!session) redirect("/");
 
   const db = createServerClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 59);
+  const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().slice(0, 10);
 
-  const { data: missions } = await db
-    .from("daily_missions")
-    .select(
-      `
-      id, local_date, verse_key, mission_text, focus_area, verse_translation,
-      reflections(llm_verdict, depth_score, text)
-    `
-    )
-    .eq("user_id", session.userId)
-    .order("local_date", { ascending: false })
-    .limit(30);
+  const qfToken = await getValidQfAccessToken(session.userId!);
 
-  const { data: garden } = await db
-    .from("gardens")
-    .select("growth_points, current_streak, longest_streak")
-    .eq("user_id", session.userId)
-    .single();
+  const [{ data: missions }, { data: garden }, qfStreaks] = await Promise.all([
+    db
+      .from("daily_missions")
+      .select("local_date, reflections(llm_verdict)")
+      .eq("user_id", session.userId)
+      .gte("local_date", sixtyDaysAgoStr)
+      .order("local_date", { ascending: true }),
+    db
+      .from("gardens")
+      .select("growth_points, current_streak, longest_streak")
+      .eq("user_id", session.userId)
+      .single(),
+    qfToken ? getStreaks(qfToken) : Promise.resolve(null),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const qfStreak: number | null = (qfStreaks as any)?.data?.streak ?? null;
+
+  // Build a set of dates where the mission was completed
+  const completedDates = new Set<string>(
+    (missions ?? [])
+      .filter((m) => {
+        const ref = Array.isArray(m.reflections)
+          ? m.reflections[0]
+          : m.reflections;
+        return ref?.llm_verdict === "accepted";
+      })
+      .map((m) => m.local_date as string)
+  );
+
+  const totalCompleted = completedDates.size;
+  const dateRange = buildDateRange(60);
+  const weeks = groupIntoWeeks(dateRange, completedDates, today);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="flex items-center justify-between px-4 py-3 border-b border-[#52b788]/20 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <Link href="/today" className="font-bold text-[#1a3a2a]">
-          ← Ghars
-        </Link>
-        <span className="text-sm text-[#555]">My history</span>
-      </nav>
+    <div className="min-h-screen">
+      <AppHeader variant="history" />
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6">
-        {/* Summary */}
+      <main className="mx-auto w-full max-w-md px-4 pb-8 pt-4">
+        {/* Garden stats strip */}
         {garden && (
-          <div className="flex gap-3 justify-center text-center">
-            <div className="flex-1 rounded-xl bg-white border border-[#52b788]/20 py-3 px-4">
-              <div className="text-lg font-bold text-[#2d6a4f]">
-                {garden.growth_points}
-              </div>
-              <div className="text-xs text-[#555]">growth pts</div>
-            </div>
-            <div className="flex-1 rounded-xl bg-white border border-[#52b788]/20 py-3 px-4">
-              <div className="text-lg font-bold text-[#2d6a4f]">
-                {garden.current_streak}
-              </div>
-              <div className="text-xs text-[#555]">current streak</div>
-            </div>
-            <div className="flex-1 rounded-xl bg-white border border-[#52b788]/20 py-3 px-4">
-              <div className="text-lg font-bold text-[#2d6a4f]">
-                {garden.longest_streak}
-              </div>
-              <div className="text-xs text-[#555]">best streak</div>
-            </div>
+          <div className="mb-8 flex flex-wrap justify-center gap-3 text-center">
+            {[
+              { value: garden.growth_points, label: "growth pts" },
+              { value: garden.current_streak, label: "streak" },
+              { value: garden.longest_streak, label: "best" },
+            ].map(({ value, label }) => (
+              <Card
+                key={label}
+                className="flex-1 min-w-[76px] py-3 px-4 shadow-none"
+              >
+                <div className="text-lg font-bold text-primary">{value}</div>
+                <div className="text-xs text-muted-foreground">{label}</div>
+              </Card>
+            ))}
+            {qfStreak !== null && (
+              <Card className="flex-1 min-w-[76px] py-3 px-4 shadow-none border-dashed">
+                <div className="text-lg font-bold text-[#2d6a4f]/70">
+                  {qfStreak}
+                </div>
+                <div className="text-xs text-muted-foreground">quran.com</div>
+              </Card>
+            )}
           </div>
         )}
 
-        {/* Mission log */}
-        <div className="space-y-3">
-          {!missions?.length && (
-            <p className="text-center text-[#aaa] py-8">
-              No missions yet. Come back after completing your first one!
-            </p>
-          )}
-          {missions?.map((m) => {
-            const ref = Array.isArray(m.reflections)
-              ? m.reflections[0]
-              : m.reflections;
-            const completed = ref?.llm_verdict === "accepted";
-
-            return (
-              <div
-                key={m.id}
-                className={`rounded-xl border bg-white px-4 py-4 space-y-2 ${
-                  completed
-                    ? "border-[#52b788]/40"
-                    : "border-gray-200 opacity-60"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="text-xs text-[#999]">{m.local_date}</div>
-                  <div className="flex items-center gap-2">
-                    {m.focus_area && (
-                      <span className="text-xs capitalize bg-[#d8f3dc] text-[#1b4332] rounded-full px-2 py-0.5">
-                        {m.focus_area}
-                      </span>
-                    )}
-                    <span className="text-xs text-[#999]">{m.verse_key}</span>
-                    {completed ? (
-                      <span className="text-green-600">✓</span>
-                    ) : (
-                      <span className="text-gray-300">○</span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-[#1a3a2a]">
-                  {m.mission_text}
-                </p>
-                {ref?.text && (
-                  <p className="text-xs text-[#666] italic line-clamp-2">
-                    &ldquo;{ref.text}&rdquo;
-                  </p>
-                )}
-                {completed && ref?.depth_score && (
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={`text-xs ${
-                          i < ref.depth_score
-                            ? "text-[#d4a017]"
-                            : "text-gray-200"
-                        }`}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        {/* Calendar heading */}
+        <div className="mb-4 flex items-baseline justify-between">
+          <h1 className="text-sm font-semibold text-[var(--ink-soft)]">
+            Last 60 days
+          </h1>
+          <span className="text-xs text-muted-foreground">
+            {totalCompleted} completed
+          </span>
         </div>
+
+        {/* Heatmap calendar */}
+        <div className="rounded-2xl border border-border/50 bg-white/60 p-4 shadow-[0_2px_12px_-4px_rgba(45,106,79,0.08)]">
+          {/* Day-of-week header */}
+          <div className="mb-2 grid grid-cols-7 gap-1.5">
+            {DOW_LABELS.map((d) => (
+              <span
+                key={d}
+                className="text-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+
+          {/* Week rows */}
+          <div className="flex flex-col gap-1.5">
+            {weeks.map((week, wi) => (
+              <div key={wi} className="grid grid-cols-7 gap-1.5">
+                {week.map((day, di) => {
+                  if (!day.date) {
+                    return <div key={di} className="aspect-square" />;
+                  }
+                  return (
+                    <div
+                      key={day.date}
+                      title={day.date}
+                      className={[
+                        "aspect-square rounded-full transition-colors",
+                        day.completed
+                          ? "bg-primary shadow-[0_1px_4px_rgba(45,106,79,0.30)]"
+                          : day.isToday
+                            ? "border-2 border-primary/40 bg-transparent"
+                            : "bg-[var(--cream-deep)]",
+                      ].join(" ")}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 flex items-center justify-end gap-4 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />
+              Completed
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--cream-deep)]" />
+              Missed
+            </span>
+          </div>
+        </div>
+
+        {totalCompleted === 0 && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Complete your first mission to start filling the calendar.
+          </p>
+        )}
+
+        <div className="h-20" />
       </main>
     </div>
   );

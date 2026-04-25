@@ -1,13 +1,20 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Pause, Play } from "lucide-react";
 
 interface Props {
   url: string;
   label?: string;
+  tone?: "light" | "dark";
 }
 
-export default function AudioPlayer({ url, label = "Listen to recitation" }: Props) {
+export default function AudioPlayer({
+  url,
+  label = "Listen to recitation",
+  tone = "light",
+}: Props) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -34,25 +41,27 @@ export default function AudioPlayer({ url, label = "Listen to recitation" }: Pro
     }
   }
 
+  const darkClass =
+    "border-transparent bg-white/12 text-white hover:bg-white/20 hover:border-transparent";
+  const lightClass =
+    "border-primary/40 text-primary hover:border-primary hover:bg-primary/10";
+
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={toggle}
-      className="flex items-center gap-2 text-sm text-[#2d6a4f] hover:text-[#1b4332] font-medium py-1.5 px-3 rounded-full border border-[#52b788]/40 hover:border-[#2d6a4f] transition-colors"
       aria-label={playing ? "Pause recitation" : label}
+      className={`rounded-full ${tone === "dark" ? darkClass : lightClass}`}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="animate-spin" />
       ) : playing ? (
-        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
-          <rect x="6" y="4" width="4" height="16" rx="1" />
-          <rect x="14" y="4" width="4" height="16" rx="1" />
-        </svg>
+        <Pause />
       ) : (
-        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
-          <path d="M8 5v14l11-7z" />
-        </svg>
+        <Play />
       )}
       {playing ? "Pause" : label}
-    </button>
+    </Button>
   );
 }

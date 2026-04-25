@@ -26,7 +26,7 @@ export async function GET() {
   if (process.env.DEBUG_AUTH === "1") {
     return NextResponse.json({
       authUrl,
-      redirect_uri: `${process.env.APP_URL}/api/auth/callback`,
+      redirect_uri: `${process.env.APP_URL}/callback`,
     });
   }
   return NextResponse.redirect(authUrl);

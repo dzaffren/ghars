@@ -1,6 +1,7 @@
 import { getLLMProvider } from "@/lib/llm";
 import { createServerClient } from "@/lib/supabase/server";
-import { addBookmark, logGoalActivity } from "@/lib/qf/user-client";
+import { logGoalActivity } from "@/lib/qf/user-client";
+import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
 
 export interface ReflectionSubmission {
   userId: string;
@@ -18,6 +19,7 @@ export interface ReflectionResult {
   verdict: "accepted" | "soft_nudge";
   feedback: string;
   depthScore: number;
+  nextStep?: string;
   growthPoints?: number;
   currentStreak?: number;
 }
@@ -54,7 +56,11 @@ export async function submitReflection(
   });
 
   if (judgment.verdict === "soft_nudge") {
-    return { verdict: "soft_nudge", feedback: judgment.feedback, depthScore: judgment.depthScore };
+    return {
+      verdict: "soft_nudge",
+      feedback: judgment.feedback,
+      depthScore: judgment.depthScore,
+    };
   }
 
   // On accepted: update garden state
@@ -66,7 +72,9 @@ export async function submitReflection(
 
   const today = new Date().toISOString().slice(0, 10);
   const lastDate = garden?.last_completed_date ?? null;
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 
   const newStreak =
     lastDate === yesterday ? (garden?.current_streak ?? 0) + 1 : 1;
@@ -93,6 +101,7 @@ export async function submitReflection(
     verdict: "accepted",
     feedback: judgment.feedback,
     depthScore: judgment.depthScore,
+    nextStep: judgment.nextStep,
     growthPoints: newPoints,
     currentStreak: newStreak,
   };
@@ -110,7 +119,9 @@ export async function checkWilting(userId: string): Promise<void> {
   if (!garden || !garden.last_completed_date) return;
 
   const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 
   if (garden.last_completed_date < yesterday && !garden.wilting) {
     await db

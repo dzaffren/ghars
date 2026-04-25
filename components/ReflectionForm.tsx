@@ -2,16 +2,26 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Send } from "lucide-react";
 
 interface Props {
   missionId: string;
-  onAccepted: (result: { growthPoints: number; currentStreak: number }) => void;
+  onAccepted: (result: {
+    growthPoints: number;
+    currentStreak: number;
+    nextStep?: string;
+  }) => void;
 }
 
 export default function ReflectionForm({ missionId, onAccepted }: Props) {
   const [text, setText] = useState("");
   const [photoPath] = useState<string | undefined>();
-  const [state, setState] = useState<"idle" | "submitting" | "nudge" | "accepted">("idle");
+  const [state, setState] = useState<
+    "idle" | "submitting" | "nudge" | "accepted"
+  >("idle");
   const [feedback, setFeedback] = useState("");
 
   async function submit() {
@@ -36,42 +46,50 @@ export default function ReflectionForm({ missionId, onAccepted }: Props) {
 
     if (data.verdict === "accepted") {
       setState("accepted");
-      onAccepted({ growthPoints: data.growthPoints, currentStreak: data.currentStreak });
+      onAccepted({
+        growthPoints: data.growthPoints,
+        currentStreak: data.currentStreak,
+        nextStep: data.nextStep,
+      });
     } else {
       setState("nudge");
     }
   }
 
-  if (state === "accepted") {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-8"
-      >
-        <div className="text-5xl mb-3">🌱</div>
-        <h3 className="text-lg font-semibold text-[#1b4332]">Mission complete!</h3>
-        {feedback && <p className="text-sm text-[#555] mt-2 max-w-xs mx-auto">{feedback}</p>}
-      </motion.div>
-    );
-  }
+  // "accepted" state: TodayClient.handleAccepted sets completed=true and
+  // renders the success block itself — return null here to avoid a flash.
+  if (state === "accepted") return null;
 
   return (
-    <div className="space-y-3">
-      <label className="block">
-        <span className="text-sm font-medium text-[#2d6a4f]">
+    <motion.div layout className="space-y-3">
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium text-primary">
           How did you apply today&apos;s verse?
         </span>
-        <textarea
+        <Textarea
           value={text}
           onChange={(e) => {
             setText(e.target.value);
             if (state === "nudge") setState("idle");
           }}
-          rows={4}
+          rows={5}
+          className="min-h-[140px] border-[var(--green-fog)] focus-visible:border-[var(--green-mid)] resize-none"
           placeholder="Share what you did, felt, or noticed today..."
-          className="mt-1.5 w-full rounded-xl border border-[#52b788]/40 bg-white px-4 py-3 text-sm text-[#1a1a1a] placeholder-[#aaa] focus:border-[#2d6a4f] focus:outline-none focus:ring-1 focus:ring-[#2d6a4f] resize-none"
         />
+        <div className="flex justify-between text-xs px-0.5">
+          <span className="text-[var(--ink-soft)]/70">
+            ~20 chars helps the model understand
+          </span>
+          <span
+            className={
+              text.length < 20
+                ? "text-[var(--ink-soft)]/50 tabular-nums"
+                : "text-primary/80 tabular-nums"
+            }
+          >
+            {text.length}
+          </span>
+        </div>
       </label>
 
       <AnimatePresence>
@@ -80,29 +98,34 @@ export default function ReflectionForm({ missionId, onAccepted }: Props) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800"
           >
-            {feedback}
+            <Alert variant="warning">
+              <AlertDescription>{feedback}</AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <button
+      <Button
         onClick={submit}
         disabled={!text.trim() || state === "submitting"}
-        className="w-full rounded-xl bg-[#2d6a4f] text-white font-medium py-3 px-6 hover:bg-[#1b4332] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full rounded-xl gap-2 group"
+        size="lg"
       >
         {state === "submitting" ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <>
+            <Loader2 className="animate-spin" />
             Reflecting…
-          </span>
+          </>
         ) : state === "nudge" ? (
           "Try again"
         ) : (
-          "Submit reflection"
+          <>
+            Submit reflection
+            <Send className="size-4 transition-transform group-hover:translate-x-0.5" />
+          </>
         )}
-      </button>
-    </div>
+      </Button>
+    </motion.div>
   );
 }

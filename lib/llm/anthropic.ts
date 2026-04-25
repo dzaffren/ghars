@@ -22,8 +22,14 @@ const PICK_TOOL: Anthropic.Tool = {
     type: "object" as const,
     properties: {
       verse_key: { type: "string", description: "e.g. '2:83'" },
-      mission_text: { type: "string", description: "One-sentence actionable mission" },
-      focus_area: { type: "string", description: "Which focus area this targets" },
+      mission_text: {
+        type: "string",
+        description: "One-sentence actionable mission",
+      },
+      focus_area: {
+        type: "string",
+        description: "Which focus area this targets",
+      },
     },
     required: ["verse_key", "mission_text", "focus_area"],
   },
@@ -31,13 +37,21 @@ const PICK_TOOL: Anthropic.Tool = {
 
 const JUDGE_TOOL: Anthropic.Tool = {
   name: "judge_reflection",
-  description: "Return verdict, feedback, and depth score",
+  description: "Return verdict, feedback, depth score, and optional next step",
   input_schema: {
     type: "object" as const,
     properties: {
       verdict: { type: "string", enum: ["accepted", "soft_nudge"] },
-      feedback: { type: "string", description: "Encouraging feedback or gentle hint" },
+      feedback: {
+        type: "string",
+        description: "Encouraging feedback or gentle nudge",
+      },
       depth_score: { type: "number", description: "1-5 depth score" },
+      next_step: {
+        type: "string",
+        description:
+          "One concrete suggestion for tomorrow (accepted only, ≤2 sentences)",
+      },
     },
     required: ["verdict", "feedback", "depth_score"],
   },
@@ -120,11 +134,14 @@ export class AnthropicLLM implements LLMProvider {
       verdict: "accepted" | "soft_nudge";
       feedback: string;
       depth_score: number;
+      next_step?: string;
     };
     return {
       verdict: inp.verdict,
       feedback: inp.feedback,
       depthScore: Math.min(5, Math.max(1, Math.round(inp.depth_score))),
+      nextStep:
+        inp.verdict === "accepted" ? (inp.next_step ?? undefined) : undefined,
     };
   }
 }

@@ -1,36 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logEvent } from "@/lib/log";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { createDailyReflectionGoal } from "@/lib/qf/user-client";
+import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
 
 export async function POST(req: NextRequest) {
   const session = await getRequiredSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { focusAreas, timezone, reminderHour } = await req.json();
 
-  const validAreas = ["patience", "gratitude", "charity", "dhikr", "kindness", "honesty"];
-  const sanitizedAreas = (focusAreas ?? []).filter((a: string) =>
-    validAreas.includes(a)
-  ).slice(0, 3);
+  const validAreas = [
+    "patience",
+    "gratitude",
+    "charity",
+    "dhikr",
+    "kindness",
+    "honesty",
+  ];
+  const sanitizedAreas = (focusAreas ?? [])
+    .filter((a: string) => validAreas.includes(a))
+    .slice(0, 3);
 
   if (!sanitizedAreas.length) {
-    return NextResponse.json({ error: "Select at least one focus area" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Select at least one focus area" },
+      { status: 400 }
+    );
   }
 
   const db = createServerClient();
 
-  // Fetch user tokens for goal creation
-  const { data: user } = await db
-    .from("users")
-    .select("qf_access_token")
-    .eq("id", session.userId)
-    .single();
-
-  // Create QF goal (best-effort)
+  // Use refreshed token for QF goal creation (best-effort)
+  const token = await getValidQfAccessToken(session.userId!);
   let goalId: string | null = null;
-  if (user?.qf_access_token) {
-    goalId = await createDailyReflectionGoal(user.qf_access_token);
+  if (token) {
+    goalId = await createDailyReflectionGoal(token);
   }
 
   await db
@@ -43,5 +50,6 @@ export async function POST(req: NextRequest) {
     })
     .eq("id", session.userId);
 
+  logEvent("onboarding_completed", { userId: session.userId });
   return NextResponse.json({ ok: true });
 }
