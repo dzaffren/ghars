@@ -80,9 +80,11 @@ QF_CLIENT_ID=           # from QF developer portal
 QF_CLIENT_SECRET=       # same
 QF_BASE_URL=https://apis.quran.foundation/content/api/v4
 QF_OAUTH_URL=https://oauth2.quran.foundation
+QF_CONTENT_OAUTH_URL=https://oauth2.quran.foundation
 
-# For dev/testing against QF prelive environment:
+# For dev/testing against QF prelive environment (if needed):
 # QF_BASE_URL=https://apis.quran.foundation/apis-prelive/content/api/v4
+# QF_USER_BASE_URL=https://apis-prelive.quran.foundation/auth/v1
 # QF_OAUTH_URL=https://prelive-oauth2.quran.foundation
 
 # ── App URL ──────────────────────────────────────────────────────
