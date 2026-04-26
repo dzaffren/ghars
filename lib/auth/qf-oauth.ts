@@ -2,11 +2,15 @@ import crypto from "crypto";
 import { createServerClient } from "@/lib/supabase/server";
 
 const QF_OAUTH_URL = process.env.QF_OAUTH_URL!;
-const CLIENT_ID = process.env.QF_CLIENT_ID!;
-const CLIENT_SECRET = process.env.QF_CLIENT_SECRET!;
+// Auth uses pre-live credentials; falls back to QF_CLIENT_ID for local dev
+const CLIENT_ID = process.env.QF_AUTH_CLIENT_ID ?? process.env.QF_CLIENT_ID!;
+const CLIENT_SECRET =
+  process.env.QF_AUTH_CLIENT_SECRET ?? process.env.QF_CLIENT_SECRET!;
 const REDIRECT_URI = `${process.env.APP_URL}/callback`;
 
-export const SCOPES = "openid offline_access";
+// Granular scopes per QF User APIs quickstart docs
+export const SCOPES =
+  "openid offline_access user bookmark collection reading_session preference goal streak";
 
 // PKCE helpers
 export function generatePKCE() {
@@ -22,7 +26,7 @@ export function generateState() {
   return crypto.randomBytes(16).toString("hex");
 }
 
-export function buildAuthUrl(challenge: string, state: string) {
+export function buildAuthUrl(challenge: string, state: string, nonce: string) {
   const params = new URLSearchParams({
     response_type: "code",
     client_id: CLIENT_ID,
@@ -31,7 +35,7 @@ export function buildAuthUrl(challenge: string, state: string) {
     state,
     code_challenge: challenge,
     code_challenge_method: "S256",
-    nonce: crypto.randomBytes(16).toString("hex"),
+    nonce,
   });
   return `${QF_OAUTH_URL}/oauth2/auth?${params}`;
 }
@@ -105,7 +109,7 @@ export async function getValidQfAccessToken(
   const needsRefresh = expiresAt === 0 || Date.now() >= expiresAt - 60_000;
 
   if (!needsRefresh) return user.qf_access_token;
-  if (!user.qf_refresh_token) return user.qf_access_token; // no refresh token, best-effort
+  if (!user.qf_refresh_token) return user.qf_access_token;
 
   try {
     const tokens = await refreshAccessToken(user.qf_refresh_token);
@@ -123,7 +127,7 @@ export async function getValidQfAccessToken(
     return tokens.access_token;
   } catch (err) {
     console.error("[getValidQfAccessToken] refresh failed:", err);
-    return user.qf_access_token; // fall back to existing token on error
+    return user.qf_access_token;
   }
 }
 
@@ -149,6 +153,8 @@ export interface QFIdTokenClaims {
   given_name?: string;
   family_name?: string;
   name?: string;
+  picture?: string;
+  nonce?: string;
   iss: string;
   aud: string | string[];
   exp: number;

@@ -5,8 +5,10 @@ const BASE_URL = process.env.QF_BASE_URL!;
 const CLIENT_ID = process.env.QF_CONTENT_CLIENT_ID ?? process.env.QF_CLIENT_ID!;
 const CLIENT_SECRET =
   process.env.QF_CONTENT_CLIENT_SECRET ?? process.env.QF_CLIENT_SECRET!;
+// Content API always uses production OAuth — never fall back to QF_OAUTH_URL
+// which may be set to prelive for user auth
 const CONTENT_OAUTH_URL =
-  process.env.QF_CONTENT_OAUTH_URL ?? process.env.QF_OAUTH_URL!;
+  process.env.QF_CONTENT_OAUTH_URL ?? "https://oauth2.quran.foundation";
 
 // In-memory token cache (per serverless function instance)
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -142,6 +144,7 @@ export interface VerseWord {
 export async function fetchVerseWords(verseKey: string): Promise<VerseWord[]> {
   try {
     const data = await qfFetch(`/verses/by_key/${verseKey}`, {
+      words: "true",
       word_fields: "text_uthmani,translation,transliteration",
       fields: "text_uthmani",
     });

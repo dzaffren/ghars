@@ -13,9 +13,11 @@ export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
   const storedState = cookieStore.get("oauth_state")?.value;
   const verifier = cookieStore.get("pkce_verifier")?.value;
+  const storedNonce = cookieStore.get("oidc_nonce")?.value;
 
   cookieStore.delete("oauth_state");
   cookieStore.delete("pkce_verifier");
+  cookieStore.delete("oidc_nonce");
 
   if (errorParam) {
     return NextResponse.redirect(new URL(`/?error=${errorParam}`, req.url));
@@ -28,6 +30,11 @@ export async function GET(req: NextRequest) {
   try {
     const tokens = await exchangeCodeForTokens(code, verifier);
     const claims = decodeIdToken(tokens.id_token);
+
+    if (storedNonce && claims.nonce !== storedNonce) {
+      console.error("[callback] nonce mismatch — possible token replay");
+      return NextResponse.redirect(new URL("/?error=invalid_nonce", req.url));
+    }
 
     const db = createServerClient();
     const expiresAt = new Date(

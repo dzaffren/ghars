@@ -1,7 +1,11 @@
 // Quran Foundation User API client (uses user's OAuth access token)
+// Base URL is separate from Content API — pre-live for auth, prod for content
 
-const BASE_URL = process.env.QF_USER_BASE_URL ?? process.env.QF_BASE_URL!;
-const CLIENT_ID = process.env.QF_CLIENT_ID!;
+const BASE_URL =
+  process.env.QF_USER_BASE_URL ??
+  "https://apis.quran.foundation/apis-prelive/auth/v1";
+// User API calls use the auth client id (pre-live)
+const CLIENT_ID = process.env.QF_AUTH_CLIENT_ID ?? process.env.QF_CLIENT_ID!;
 
 function userFetch(
   path: string,
@@ -75,7 +79,7 @@ export async function createDailyReflectionGoal(
   }
 }
 
-// Log activity against the goal (endpoint may not be documented; best-effort)
+// Log activity against the goal (best-effort; silently fails if endpoint unavailable)
 export async function logGoalActivity(
   accessToken: string,
   goalId: string
