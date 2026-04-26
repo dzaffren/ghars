@@ -3,63 +3,34 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { History, Home, BookOpen, Users, Compass, LogOut } from "lucide-react";
+import { Home, Compass, BookMarked, Users, History } from "lucide-react";
 
-async function signOut() {
-  await fetch("/api/auth/logout", { method: "POST" });
-  window.location.href = "/";
-}
+const TABS = [
+  { href: "/today", icon: Home, label: "Today" },
+  { href: "/explore", icon: Compass, label: "Explore" },
+  { href: "/dhikr", icon: BookMarked, label: "Tasbih" },
+  { href: "/circles", icon: Users, label: "Circles" },
+  { href: "/history", icon: History, label: "History" },
+] as const;
 
-type Variant =
-  | "today"
-  | "history"
-  | "reflections"
-  | "dhikr"
-  | "circles"
-  | "explore";
+const HIDE_NAV_ON = ["/", "/onboarding"];
 
 interface Props {
-  variant?: Variant;
   className?: string;
+  variant?: string;
 }
 
-const NAV_LINKS: Record<
-  Variant,
-  { href: string; icon: React.ReactNode; label: string }[]
-> = {
-  today: [
-    { href: "/explore", icon: <Compass size={15} />, label: "Explore" },
-    { href: "/history", icon: <History size={15} />, label: "History" },
-  ],
-  history: [
-    { href: "/today", icon: <Home size={15} />, label: "Today" },
-    { href: "/explore", icon: <Compass size={15} />, label: "Explore" },
-  ],
-  reflections: [
-    { href: "/today", icon: <Home size={15} />, label: "Today" },
-    { href: "/explore", icon: <Compass size={15} />, label: "Explore" },
-  ],
-  dhikr: [{ href: "/today", icon: <Home size={15} />, label: "Today" }],
-  circles: [
-    { href: "/today", icon: <Home size={15} />, label: "Today" },
-    { href: "/circles/join", icon: <Users size={15} />, label: "Join" },
-  ],
-  explore: [
-    { href: "/today", icon: <Home size={15} />, label: "Today" },
-    { href: "/reflections", icon: <BookOpen size={15} />, label: "Journal" },
-  ],
-};
-
-export default function AppHeader({ variant, className = "" }: Props) {
+export default function AppHeader({ className = "" }: Props) {
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
   const { scrollY } = useScroll();
+  const showNav = !HIDE_NAV_ON.includes(pathname);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 24);
   });
-
-  const navLinks = variant ? NAV_LINKS[variant] : [];
 
   return (
     <motion.header
@@ -68,7 +39,6 @@ export default function AppHeader({ variant, className = "" }: Props) {
       transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.08 }}
       className={`sticky top-0 z-40 w-full ${className}`}
     >
-      {/* Frosted glass layer */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         animate={{
@@ -84,74 +54,58 @@ export default function AppHeader({ variant, className = "" }: Props) {
         style={{ borderBottomWidth: 1, borderBottomStyle: "solid" }}
       />
 
-      {/* Content row */}
-      <div className="relative mx-auto flex max-w-md items-center justify-between px-4 py-3">
-        <Link href="/today" className="flex items-center gap-2.5">
-          <Image
-            src="/icons/logo.png"
-            alt=""
-            width={26}
-            height={26}
-            priority
-            className="select-none"
-          />
-          <span className="text-base font-semibold tracking-tight text-[#1a3a2a]/85">
-            Ghars
-          </span>
-        </Link>
-
-        <motion.div
-          className="flex items-center gap-1"
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 260,
-            damping: 22,
-            delay: 0.22,
-          }}
-        >
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.href}
-              href={link.href}
-              icon={link.icon}
-              label={link.label}
+      <div className="relative mx-auto max-w-md px-4">
+        {/* Logo row */}
+        <div className="flex items-center py-2.5">
+          <Link href="/today" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt=""
+              width={24}
+              height={24}
+              priority
+              className="select-none"
             />
-          ))}
+            <span className="text-sm font-semibold tracking-tight text-[#1a3a2a]/85">
+              Ghars
+            </span>
+          </Link>
+        </div>
 
-          {variant && (
-            <button
-              onClick={signOut}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[var(--ink-soft)] transition-colors hover:bg-[var(--green-fog)] hover:text-[#1a3a2a]"
-              title="Sign out"
-            >
-              <LogOut size={14} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          )}
-        </motion.div>
+        {/* Nav tabs row */}
+        {showNav && (
+          <div className="flex items-stretch border-t border-[var(--green-fog)]/60">
+            {TABS.map(({ href, icon: Icon, label }) => {
+              const active =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+                    active
+                      ? "text-primary"
+                      : "text-[var(--ink-soft)]/50 hover:text-[var(--ink-soft)]"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.2 : 1.7}
+                    className="transition-all"
+                  />
+                  <span
+                    className={`text-[9px] font-medium tracking-wide ${
+                      active ? "opacity-100" : "opacity-60"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </motion.header>
-  );
-}
-
-function NavLink({
-  href,
-  icon,
-  label,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--ink-soft)] transition-colors hover:bg-[var(--green-fog)] hover:text-[#1a3a2a]"
-    >
-      {icon}
-      <span>{label}</span>
-    </Link>
   );
 }

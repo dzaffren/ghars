@@ -1,16 +1,11 @@
 -- ============================================================
 -- Ghars dev seed — 7 days of missions + reflections
--- Run this in: Supabase dashboard → SQL Editor
---
--- STEP 1: Find your user_id by running this first:
---   SELECT id, email, display_name FROM users;
---
--- STEP 2: Paste your id in the v_user_id line below, then run.
+-- Auto-creates a test user if none exists, then seeds sample data.
 -- ============================================================
 
 DO $$
 DECLARE
-  v_user_id   uuid := 'ec4b1da2-6c23-4862-a904-ad695131651e';  -- ← change this
+  v_user_id   uuid;
   v_today     date := current_date;
 
   -- mission ids (generated upfront so reflections can reference them)
@@ -24,6 +19,13 @@ DECLARE
   m0 uuid := gen_random_uuid();  -- today (not yet completed)
 
 BEGIN
+  -- ── 0. Create or get test user ──────────────────────────────
+  INSERT INTO users (qf_sub, email, display_name)
+  VALUES ('test-user-seed', 'ahmaddzafranmohamadbustaman@gmail.com', 'Test User')
+  ON CONFLICT (qf_sub) DO NOTHING;
+
+  SELECT id INTO v_user_id FROM users WHERE qf_sub = 'test-user-seed' LIMIT 1;
+
   -- ── 1. Missions (one per day, oldest first) ─────────────────
   INSERT INTO daily_missions
     (id, user_id, local_date, verse_key, verse_arabic, verse_translation, mission_text, focus_area)

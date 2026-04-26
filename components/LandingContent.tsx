@@ -29,7 +29,7 @@ export default function LandingContent() {
       <motion.div variants={item} className="space-y-3">
         <div className="flex justify-center">
           <Image
-            src="/icons/logo.png"
+            src="/logo.png"
             alt="Ghars logo"
             width={88}
             height={88}

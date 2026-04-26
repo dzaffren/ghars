@@ -13,7 +13,7 @@ export default function BrandHeader({
   return (
     <header className={`flex items-center gap-2.5 ${className}`}>
       <Image
-        src="/icons/logo.png"
+        src="/logo.png"
         alt=""
         width={logoSize}
         height={logoSize}
