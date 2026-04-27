@@ -1,52 +1,27 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
 import { getRequiredSession } from "@/lib/auth/session";
-import { fetchChapterVerses } from "@/lib/qf/content-client";
+import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
+import {
+  fetchChapterVerses,
+  fetchChapters,
+  fetchChapterAudioUrl,
+  type ChapterVerse,
+} from "@/lib/qf/content-client";
+import { getBookmarks } from "@/lib/qf/user-client";
 import AppHeader from "@/components/AppHeader";
-import { ChevronLeft } from "lucide-react";
+import SurahClient from "./SurahClient";
 
-// Chapter names (first 30 — enough for bookmarked surahs in a typical user)
-const CHAPTER_NAMES: Record<number, string> = {
-  1: "Al-Fatihah",
-  2: "Al-Baqarah",
-  3: "Ali 'Imran",
-  4: "An-Nisa",
-  5: "Al-Ma'idah",
-  6: "Al-An'am",
-  7: "Al-A'raf",
-  8: "Al-Anfal",
-  9: "At-Tawbah",
-  10: "Yunus",
-  11: "Hud",
-  12: "Yusuf",
-  13: "Ar-Ra'd",
-  14: "Ibrahim",
-  15: "Al-Hijr",
-  16: "An-Nahl",
-  17: "Al-Isra",
-  18: "Al-Kahf",
-  19: "Maryam",
-  20: "Ta-Ha",
-  21: "Al-Anbiya",
-  22: "Al-Hajj",
-  23: "Al-Mu'minun",
-  24: "An-Nur",
-  25: "Al-Furqan",
-  26: "Ash-Shu'ara",
-  27: "An-Naml",
-  28: "Al-Qasas",
-  29: "Al-'Ankabut",
-  30: "Ar-Rum",
-  36: "Ya-Sin",
-  49: "Al-Hujurat",
-  55: "Ar-Rahman",
-  67: "Al-Mulk",
-  93: "Ad-Duhaa",
-  94: "Ash-Sharh",
-  112: "Al-Ikhlas",
-  113: "Al-Falaq",
-  114: "An-Nas",
-};
+interface QFChapter {
+  id: number;
+  name_simple?: string;
+  name_arabic?: string;
+  verses_count?: number;
+}
+
+interface QFBookmarkRow {
+  surah_number: number;
+  ayah_number: number;
+}
 
 export default async function SurahPage({
   params,
@@ -64,83 +39,65 @@ export default async function SurahPage({
   const chId = parseInt(chapterId, 10);
   if (isNaN(chId) || chId < 1 || chId > 114) notFound();
 
-  const highlightAyah = ayahParam ? parseInt(ayahParam, 10) : null;
+  const initialHighlight = ayahParam ? parseInt(ayahParam, 10) : undefined;
 
-  let verses;
+  // Fetch chapter-specific data in parallel. On any failure, we still
+  // render the page and let the client show a retry UI.
+  let verses: ChapterVerse[] = [];
+  let chapterName = `Surah ${chId}`;
+  let audioUrl: string | null = null;
+  let loadError = false;
+
   try {
-    verses = await fetchChapterVerses(chId);
-  } catch {
-    notFound();
+    const [chaptersData, versesData, audio] = await Promise.all([
+      fetchChapters(),
+      fetchChapterVerses(chId),
+      fetchChapterAudioUrl(chId),
+    ]);
+    verses = versesData;
+    audioUrl = audio;
+    const list: QFChapter[] = chaptersData?.chapters ?? [];
+    const match = list.find((c) => Number(c.id) === chId);
+    if (match?.name_simple) chapterName = match.name_simple;
+  } catch (err) {
+    console.error("[SurahPage] content fetch failed:", String(err));
+    loadError = true;
   }
 
-  const chapterName = CHAPTER_NAMES[chId] ?? `Surah ${chId}`;
+  // Load user's bookmarks (best-effort; empty set on any failure)
+  const initialBookmarks = new Set<string>();
+  try {
+    const token = await getValidQfAccessToken(session.userId!);
+    if (token) {
+      const data = await getBookmarks(token);
+      const raw: QFBookmarkRow[] = Array.isArray(data)
+        ? data
+        : (data?.data ?? data?.bookmarks ?? []);
+      for (const b of raw) {
+        if (
+          typeof b?.surah_number === "number" &&
+          typeof b?.ayah_number === "number"
+        ) {
+          initialBookmarks.add(`${b.surah_number}:${b.ayah_number}`);
+        }
+      }
+    }
+  } catch {
+    // Non-critical; show page without pre-marked bookmarks
+  }
 
   return (
     <div className="min-h-screen">
       <AppHeader variant="reflections" />
-      <main className="mx-auto w-full max-w-md px-4 pb-12 pt-4 space-y-4">
-        {/* Back */}
-        <Link
-          href="/bookmarks"
-          className="flex items-center gap-1 text-xs text-[var(--ink-soft)] hover:text-primary"
-        >
-          <ChevronLeft size={14} />
-          Bookmarks
-        </Link>
-
-        {/* Heading */}
-        <div className="space-y-0.5">
-          <h1 className="text-lg font-bold text-[#1a3a2a]">{chapterName}</h1>
-          <p className="text-xs text-muted-foreground">
-            Surah {chId} · {verses.length} verses
-          </p>
-        </div>
-
-        {/* Verse list */}
-        <div className="space-y-3">
-          {verses.map((verse) => {
-            const isHighlighted =
-              highlightAyah !== null && verse.verse_number === highlightAyah;
-            return (
-              <div
-                key={verse.verse_key}
-                id={`ayah-${verse.verse_number}`}
-                className={`rounded-2xl border px-4 py-4 space-y-2 transition-colors ${
-                  isHighlighted
-                    ? "border-primary bg-[var(--green-fog)] shadow-[0_0_0_2px_rgba(45,106,79,0.15)]"
-                    : "border-[var(--green-fog)] bg-white/80"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--green-fog)] text-[10px] font-semibold text-primary">
-                    {verse.verse_number}
-                  </span>
-                  <p className="arabic-text text-right leading-loose flex-1">
-                    {verse.text_uthmani}
-                  </p>
-                </div>
-                <p className="text-sm leading-relaxed text-[var(--ink-soft)]/85 pl-8">
-                  {verse.translation}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </main>
-
-      {/* Auto-scroll to highlighted ayah */}
-      {highlightAyah && (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(){
-                var el = document.getElementById('ayah-${highlightAyah}');
-                if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
-              })();
-            `,
-          }}
-        />
-      )}
+      <SurahClient
+        chapterId={chId}
+        chapterName={chapterName}
+        verses={verses}
+        audioUrl={audioUrl}
+        initialBookmarks={Array.from(initialBookmarks)}
+        initialHighlight={initialHighlight}
+        loadError={loadError}
+      />
     </div>
   );
 }

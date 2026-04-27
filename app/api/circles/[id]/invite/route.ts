@@ -58,15 +58,24 @@ export async function POST(
     .eq("circle_id", circleId)
     .eq("used", false);
 
-  // Generate new code (retry on collision)
-  let code = makeCode();
+  // Generate new code (retry on collision). Only return once the row is
+  // actually persisted — otherwise the client would display a "code" that
+  // doesn't exist in the DB and /join would reject it.
+  let lastError: unknown = null;
   for (let i = 0; i < 5; i++) {
+    const code = makeCode();
     const { error } = await db
       .from("circle_invites")
       .insert({ code, circle_id: circleId, created_by: session.userId });
-    if (!error) break;
-    code = makeCode();
+    if (!error) {
+      return NextResponse.json({ code });
+    }
+    lastError = error;
   }
 
-  return NextResponse.json({ code });
+  console.error("circle_invites insert failed", lastError);
+  return NextResponse.json(
+    { error: "Could not generate invite code. Please try again." },
+    { status: 500 }
+  );
 }

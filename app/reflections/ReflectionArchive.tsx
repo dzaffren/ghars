@@ -3,24 +3,22 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {
+  filterReflections,
+  getRef,
+  type ReflectionEntry,
+  type ReflectionLike,
+} from "@/lib/reflections/filter";
 
-interface Reflection {
-  id: string;
-  text: string;
+type Reflection = ReflectionLike & {
   llm_verdict: string;
   llm_feedback: string | null;
   depth_score: number | null;
-}
+};
 
-interface Entry {
-  id: string;
-  local_date: string;
-  verse_key: string;
-  verse_translation: string;
-  mission_text: string;
-  focus_area: string | null;
+type Entry = ReflectionEntry & {
   reflections: Reflection | Reflection[] | null;
-}
+};
 
 const FOCUS_AREAS = [
   "patience",
@@ -30,13 +28,6 @@ const FOCUS_AREAS = [
   "kindness",
   "honesty",
 ];
-
-function getRef(entry: Entry): Reflection | null {
-  if (!entry.reflections) return null;
-  return Array.isArray(entry.reflections)
-    ? entry.reflections[0]
-    : entry.reflections;
-}
 
 function formatDate(dateStr: string) {
   try {
@@ -70,24 +61,10 @@ export default function ReflectionArchive({ entries }: { entries: Entry[] }) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    let list = entries;
-    if (activeFilter) {
-      list = list.filter((e) => e.focus_area === activeFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((e) => {
-        const ref = getRef(e);
-        return (
-          e.mission_text.toLowerCase().includes(q) ||
-          e.verse_translation.toLowerCase().includes(q) ||
-          (ref?.text ?? "").toLowerCase().includes(q)
-        );
-      });
-    }
-    return list;
-  }, [entries, activeFilter, search]);
+  const filtered = useMemo(
+    () => filterReflections(entries, { activeFilter, search }),
+    [entries, activeFilter, search]
+  );
 
   return (
     <div className="space-y-4">

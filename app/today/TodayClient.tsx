@@ -246,7 +246,7 @@ export default function TodayClient({
             <StreakPill streak={garden.current_streak} />
           </div>
 
-          <div className="relative flex justify-center">
+          <div className="relative w-full flex items-center justify-center">
             <GardenTree
               state={treeState}
               isVerified={celebrationActive}
@@ -351,7 +351,7 @@ export default function TodayClient({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowTafsir((v) => !v)}
-                    className="px-0 text-white/60 hover:bg-white/10 hover:text-white text-xs"
+                    className="px-0 text-white/75 hover:bg-white/10 hover:text-white text-xs"
                   >
                     {showTafsir ? "Hide tafsir" : "See tafsir"}
                   </Button>
@@ -386,7 +386,7 @@ export default function TodayClient({
                     className="overflow-hidden border-t border-white/10"
                   >
                     <div className="px-5 py-3 text-sm leading-relaxed text-white/70">
-                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-white/40">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-white/65">
                         Ibn Kathir
                       </p>
                       {mission.tafsir_snippet}
@@ -397,7 +397,7 @@ export default function TodayClient({
 
               {/* Mission + reflection */}
               <div className="bg-white/10 px-5 py-4 space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/60">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
                   Today&apos;s mission
                 </p>
                 <p className="text-sm font-medium leading-relaxed text-white">
@@ -418,7 +418,7 @@ export default function TodayClient({
                       </p>
                     )}
                     {!nextStep && (
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-white/75">
                         Come back tomorrow for a new mission.
                       </p>
                     )}

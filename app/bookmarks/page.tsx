@@ -52,7 +52,9 @@ export default async function BookmarksPage() {
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <Bookmark size={32} className="text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
-              No bookmarks yet. Tap 🏷️ on any verse in Today to save it here.
+              No bookmarks yet. Tap the{" "}
+              <Bookmark size={14} className="inline" /> icon on any verse in
+              Today to save it here.
             </p>
           </div>
         ) : (

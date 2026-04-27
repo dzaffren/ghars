@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import {
+  Wind,
+  Sparkles,
+  HandHeart,
+  Heart,
+  Leaf,
+  Scale,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -12,42 +21,47 @@ const GardenTree = dynamic(() => import("@/components/GardenTree"), {
   ssr: false,
 });
 
-const FOCUS_AREAS = [
+const FOCUS_AREAS: {
+  id: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}[] = [
   {
     id: "patience",
     label: "Patience",
-    emoji: "🧘",
-    desc: "Sabr — endurance through hardship",
+    icon: Wind,
+    description: "Sabr — endurance through hardship",
   },
   {
     id: "gratitude",
     label: "Gratitude",
-    emoji: "🤲",
-    desc: "Shukr — thankfulness in all states",
+    icon: Sparkles,
+    description: "Shukr — thankfulness in all states",
   },
   {
     id: "charity",
     label: "Charity",
-    emoji: "🤝",
-    desc: "Sadaqah — giving what you love",
+    icon: HandHeart,
+    description: "Sadaqah — giving what you love",
   },
   {
     id: "dhikr",
     label: "Remembrance",
-    emoji: "📿",
-    desc: "Dhikr — keeping Allah in mind",
+    icon: Heart,
+    description: "Dhikr — keeping Allah in mind",
   },
   {
     id: "kindness",
     label: "Kindness",
-    emoji: "💚",
-    desc: "Ihsan — excellence in all dealings",
+    icon: Leaf,
+    description: "Ihsan — excellence in all dealings",
   },
   {
     id: "honesty",
     label: "Honesty",
-    emoji: "⚖️",
-    desc: "Sidq — truth in word and deed",
+    icon: Scale,
+    description: "Sidq — truth in word and deed",
   },
 ];
 
@@ -150,12 +164,14 @@ export default function OnboardingPage() {
                       : "border-border bg-white hover:border-accent"
                   )}
                 >
-                  <div className="mb-1 text-2xl">{area.emoji}</div>
+                  <div className="mb-1 text-primary">
+                    <area.icon size={24} />
+                  </div>
                   <div className="text-sm font-semibold text-[#1a3a2a]">
                     {area.label}
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    {area.desc}
+                    {area.description}
                   </div>
                 </button>
               );

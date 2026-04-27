@@ -94,31 +94,33 @@ export default function ExploreClient() {
         </p>
       )}
       <div className="space-y-3">
-        {results.map((r) => {
-          const [chapter, ayah] = r.verseKey.split(":").map(Number);
-          return (
-            <Link
-              key={r.verseKey}
-              href={`/surah/${chapter}?ayah=${ayah}`}
-              className="block rounded-2xl border border-[var(--green-fog)] bg-white/80 overflow-hidden shadow-[0_2px_12px_-4px_rgba(45,106,79,0.08)] hover:shadow-[0_4px_18px_-4px_rgba(45,106,79,0.14)] transition-shadow"
-            >
-              <div className="bg-gradient-to-br from-[#1a3a2a] to-[#26563f] px-4 py-3 text-white space-y-2">
-                <p className="text-[11px] opacity-50">{r.verseKey}</p>
-                <p className="arabic-text text-right leading-loose text-base">
-                  {r.arabic}
-                </p>
-                <p className="text-xs leading-relaxed opacity-85">
-                  {r.translation}
-                </p>
-              </div>
-              <div className="px-4 py-2 flex items-center justify-between">
-                <p className="text-[11px] text-muted-foreground">
-                  Tap to read full surah →
-                </p>
-              </div>
-            </Link>
-          );
-        })}
+        {results
+          .filter((r) => /^\d+:\d+$/.test(r.verseKey))
+          .map((r) => {
+            const [chapter, ayah] = r.verseKey.split(":").map(Number);
+            return (
+              <Link
+                key={r.verseKey}
+                href={`/surah/${chapter}?ayah=${ayah}`}
+                className="block rounded-2xl border border-[var(--green-fog)] bg-white/80 overflow-hidden shadow-[0_2px_12px_-4px_rgba(45,106,79,0.08)] hover:shadow-[0_4px_18px_-4px_rgba(45,106,79,0.14)] transition-shadow"
+              >
+                <div className="bg-gradient-to-br from-[#1a3a2a] to-[#26563f] px-4 py-3 text-white space-y-2">
+                  <p className="text-[11px] opacity-50">{r.verseKey}</p>
+                  <p className="arabic-text text-right leading-loose text-base">
+                    {r.arabic}
+                  </p>
+                  <p className="text-xs leading-relaxed opacity-85">
+                    {r.translation}
+                  </p>
+                </div>
+                <div className="px-4 py-2 flex items-center justify-between">
+                  <p className="text-[11px] text-muted-foreground">
+                    Tap to read full surah →
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
       </div>
     </div>
   );

@@ -20,10 +20,18 @@ function initWebPush() {
 }
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret. Accept any of:
+  //   - Authorization: Bearer <CRON_SECRET>  (Vercel Cron default)
+  //   - x-cron-secret: <CRON_SECRET>         (manual curl testing)
+  //   - ?secret=<CRON_SECRET>                (manual curl testing)
+  const expected = process.env.CRON_SECRET;
+  const authHeader = req.headers.get("authorization");
   const secret = req.headers.get("x-cron-secret");
   const query = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.CRON_SECRET && query !== process.env.CRON_SECRET) {
+  const bearerOk = !!expected && authHeader === `Bearer ${expected}`;
+  const headerOk = !!expected && secret === expected;
+  const queryOk = !!expected && query === expected;
+  if (!bearerOk && !headerOk && !queryOk) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -39,49 +47,51 @@ export async function GET(req: NextRequest) {
   if (!users?.length) return NextResponse.json({ processed: 0 });
 
   const results = await Promise.allSettled(
-    users.map(async (user: {
-      id: string;
-      timezone: string;
-      reminder_hour: number;
-      push_subscription: PushSubscription | null;
-      focus_areas: string[];
-    }) => {
-      // Check if now is user's reminder hour
-      const localDate = getLocalDate(user.timezone);
-      const localHour = getLocalHour(user.timezone);
-      if (localHour !== user.reminder_hour) return null;
+    users.map(
+      async (user: {
+        id: string;
+        timezone: string;
+        reminder_hour: number;
+        push_subscription: PushSubscription | null;
+        focus_areas: string[];
+      }) => {
+        // Check if now is user's reminder hour
+        const localDate = getLocalDate(user.timezone);
+        const localHour = getLocalHour(user.timezone);
+        if (localHour !== user.reminder_hour) return null;
 
-      // Generate today's mission (idempotent)
-      const mission = await getOrCreateTodaysMission(user.id);
-      if (!mission) return null;
+        // Generate today's mission (idempotent)
+        const mission = await getOrCreateTodaysMission(user.id);
+        if (!mission) return null;
 
-      // Apply wilting check
-      await applyWiltingCheck(user.id, db);
+        // Apply wilting check
+        await applyWiltingCheck(user.id, db);
 
-      // Send push notification if subscribed and VAPID configured
-      if (pushEnabled && user.push_subscription) {
-        try {
-          await webpush.sendNotification(
-            user.push_subscription as unknown as webpush.PushSubscription,
-            JSON.stringify({
-              title: "Your mission today 🌱",
-              body: mission.mission_text,
-              url: "/today",
-            })
-          );
-        } catch (err: unknown) {
-          if ((err as { statusCode?: number })?.statusCode === 410) {
-            // Dead subscription — clear it
-            await db
-              .from("users")
-              .update({ push_subscription: null })
-              .eq("id", user.id);
+        // Send push notification if subscribed and VAPID configured
+        if (pushEnabled && user.push_subscription) {
+          try {
+            await webpush.sendNotification(
+              user.push_subscription as unknown as webpush.PushSubscription,
+              JSON.stringify({
+                title: "Your mission today",
+                body: mission.mission_text,
+                url: "/today",
+              })
+            );
+          } catch (err: unknown) {
+            if ((err as { statusCode?: number })?.statusCode === 410) {
+              // Dead subscription — clear it
+              await db
+                .from("users")
+                .update({ push_subscription: null })
+                .eq("id", user.id);
+            }
           }
         }
-      }
 
-      return { userId: user.id, localDate };
-    })
+        return { userId: user.id, localDate };
+      }
+    )
   );
 
   const processed = results.filter(
@@ -105,7 +115,10 @@ function getLocalHour(timezone: string): number {
   }
 }
 
-async function applyWiltingCheck(userId: string, db: ReturnType<typeof createServerClient>) {
+async function applyWiltingCheck(
+  userId: string,
+  db: ReturnType<typeof createServerClient>
+) {
   const { data: garden } = await db
     .from("gardens")
     .select("last_completed_date, wilting")
@@ -114,11 +127,10 @@ async function applyWiltingCheck(userId: string, db: ReturnType<typeof createSer
 
   if (!garden?.last_completed_date) return;
 
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
   if (garden.last_completed_date < yesterday && !garden.wilting) {
-    await db
-      .from("gardens")
-      .update({ wilting: true })
-      .eq("user_id", userId);
+    await db.from("gardens").update({ wilting: true }).eq("user_id", userId);
   }
 }

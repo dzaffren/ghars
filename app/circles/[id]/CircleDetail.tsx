@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Copy, Check, Link2 } from "lucide-react";
+import { Copy, Check, Link2, Wind, Flame } from "lucide-react";
 import type { TreeState } from "@/components/GardenTree";
 
 const GardenTree = dynamic(() => import("@/components/GardenTree"), {
@@ -42,15 +42,26 @@ function InviteButton({ circleId }: { circleId: string }) {
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function generate() {
     setLoading(true);
-    const res = await fetch(`/api/circles/${circleId}/invite`, {
-      method: "POST",
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (data.code) setCode(data.code);
+    setError(null);
+    try {
+      const res = await fetch(`/api/circles/${circleId}/invite`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.code) {
+        setError(data.error ?? "Could not generate invite code.");
+        return;
+      }
+      setCode(data.code);
+    } catch {
+      setError("Could not generate invite code.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function copy() {
@@ -82,14 +93,17 @@ function InviteButton({ circleId }: { circleId: string }) {
   }
 
   return (
-    <button
-      onClick={generate}
-      disabled={loading}
-      className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--green-fog)] py-3 text-sm font-medium text-[var(--ink-soft)] hover:bg-[var(--green-fog)] transition-colors disabled:opacity-50"
-    >
-      <Link2 size={14} />
-      {loading ? "Generating…" : "Get invite code"}
-    </button>
+    <div className="space-y-2">
+      <button
+        onClick={generate}
+        disabled={loading}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--green-fog)] py-3 text-sm font-medium text-[var(--ink-soft)] hover:bg-[var(--green-fog)] transition-colors disabled:opacity-50"
+      >
+        <Link2 size={14} />
+        {loading ? "Generating…" : "Get invite code"}
+      </button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }
 
@@ -164,13 +178,20 @@ export default function CircleDetail({
                     <span className="text-[10px] text-primary/50">✦ owner</span>
                   )}
                 </div>
-                <p className="text-xs text-[var(--ink-soft)]/70 mt-0.5">
-                  {stageLabel(member.garden.growthPoints)}
-                  {member.garden.wilting && " · 🍂 wilting"}
+                <p className="text-xs text-[var(--ink-soft)]/70 mt-0.5 flex items-center gap-1">
+                  <span>{stageLabel(member.garden.growthPoints)}</span>
+                  {member.garden.wilting && (
+                    <span className="flex items-center gap-1">
+                      <span>·</span>
+                      <Wind size={12} className="inline" />
+                      <span>wilting</span>
+                    </span>
+                  )}
                 </p>
                 <div className="mt-1.5 flex items-center gap-3">
-                  <span className="text-xs font-medium text-primary">
-                    🔥 {member.garden.currentStreak} streak
+                  <span className="text-xs font-medium text-primary flex items-center gap-1">
+                    <Flame size={12} className="inline" />
+                    {member.garden.currentStreak} streak
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {member.garden.growthPoints} pts

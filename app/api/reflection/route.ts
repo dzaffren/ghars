@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { logEvent } from "@/lib/log";
 import { getRequiredSession } from "@/lib/auth/session";
 import { submitReflection } from "@/lib/mission/judge";
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
       verdict: result.verdict,
       depthScore: result.depthScore,
     });
+
+    revalidatePath("/history");
+    revalidatePath("/today");
+
     return NextResponse.json(result);
   } catch (err) {
     console.error("Reflection submission error:", err);

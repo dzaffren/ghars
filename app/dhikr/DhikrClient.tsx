@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type DhikrType = "subhan" | "alhamd" | "akbar";
@@ -46,8 +46,10 @@ export default function DhikrClient({ initial, localDate }: Props) {
   const [counts, setCounts] = useState(initial);
   const [tapping, setTapping] = useState<DhikrType | null>(null);
   const [justCompleted, setJustCompleted] = useState(false);
+  const inFlight = useRef<Record<string, boolean>>({});
 
   async function tap(type: DhikrType) {
+    if (inFlight.current[type]) return;
     if (counts.completed) return;
     const d = DHIKR.find((d) => d.type === type)!;
     if (counts[type] >= d.target) return;
@@ -55,19 +57,36 @@ export default function DhikrClient({ initial, localDate }: Props) {
     setTapping(type);
     setTimeout(() => setTapping(null), 180);
 
-    const res = await fetch("/api/dhikr", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, localDate }),
-    });
-    const data = await res.json();
-    setCounts({
-      subhan: data.subhan,
-      alhamd: data.alhamd,
-      akbar: data.akbar,
-      completed: data.completed,
-    });
-    if (data.justCompleted) setJustCompleted(true);
+    // Optimistic update: increment immediately
+    setCounts((prev) => ({ ...prev, [type]: prev[type] + 1 }));
+
+    inFlight.current[type] = true;
+    try {
+      const res = await fetch("/api/dhikr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, localDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // Rollback on server error
+        setCounts((prev) => ({ ...prev, [type]: Math.max(0, prev[type] - 1) }));
+        return;
+      }
+      // Authoritative count from server
+      setCounts({
+        subhan: data.subhan,
+        alhamd: data.alhamd,
+        akbar: data.akbar,
+        completed: data.completed,
+      });
+      if (data.justCompleted) setJustCompleted(true);
+    } catch {
+      // Rollback on network error
+      setCounts((prev) => ({ ...prev, [type]: Math.max(0, prev[type] - 1) }));
+    } finally {
+      inFlight.current[type] = false;
+    }
   }
 
   const totalDone = counts.subhan + counts.alhamd + counts.akbar;
@@ -130,6 +149,7 @@ export default function DhikrClient({ initial, localDate }: Props) {
             key={d.type}
             onClick={() => tap(d.type)}
             disabled={counts.completed || done}
+            style={{ touchAction: "manipulation" }}
             className={`w-full rounded-2xl border p-5 text-left transition-colors active:scale-[0.98] select-none ${
               done
                 ? "border-primary/30 bg-[var(--green-fog)] cursor-default"

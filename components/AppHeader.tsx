@@ -5,7 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { Home, Compass, BookMarked, Users, History } from "lucide-react";
+import {
+  Home,
+  Compass,
+  BookMarked,
+  Users,
+  History,
+  LogOut,
+} from "lucide-react";
 
 const TABS = [
   { href: "/today", icon: Home, label: "Today" },
@@ -56,7 +63,7 @@ export default function AppHeader({ className = "" }: Props) {
 
       <div className="relative mx-auto max-w-md px-4">
         {/* Logo row */}
-        <div className="flex items-center py-2.5">
+        <div className="flex items-center justify-between py-2.5">
           <Link href="/today" className="flex items-center gap-2">
             <Image
               src="/logo.png"
@@ -70,6 +77,17 @@ export default function AppHeader({ className = "" }: Props) {
               Ghars
             </span>
           </Link>
+          {showNav && (
+            <form action="/api/auth/logout" method="POST">
+              <button
+                type="submit"
+                aria-label="Log out"
+                className="flex items-center justify-center rounded-md p-1.5 text-[#1a3a2a]/60 transition-colors hover:text-[#1a3a2a]"
+              >
+                <LogOut size={16} strokeWidth={1.7} />
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Nav tabs row */}

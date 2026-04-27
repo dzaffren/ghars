@@ -184,6 +184,25 @@ export async function fetchChapters() {
   return qfFetch("/chapters");
 }
 
+// Fetches the full-chapter recitation URL for the given reciter.
+// Returns null on any failure (non-critical; audio is optional).
+export async function fetchChapterAudioUrl(
+  chapterId: number | string,
+  recitationId = 7
+): Promise<string | null> {
+  try {
+    const data = await qfFetch(
+      `/chapter_recitations/${recitationId}/${chapterId}`
+    );
+    const file = data?.audio_file ?? null;
+    const raw: string | null = file?.audio_url ?? file?.url ?? null;
+    if (!raw) return null;
+    return raw.startsWith("http") ? raw : `https://verses.quran.com/${raw}`;
+  } catch {
+    return null;
+  }
+}
+
 export interface ChapterVerse {
   verse_key: string;
   verse_number: number;
