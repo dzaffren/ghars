@@ -73,6 +73,7 @@ interface Props {
   circlePreview: CirclePreview[];
   journalEntry: JournalEntryPreview | null;
   completedDates14: string[];
+  localDate: string;
 }
 
 // ── Local helpers ─────────────────────────────────────────────────
@@ -154,6 +155,7 @@ export default function TodayClient({
   circlePreview,
   journalEntry,
   completedDates14,
+  localDate,
 }: Props) {
   const [garden, setGarden] = useState<Garden>(initialGarden);
   const [completed, setCompleted] = useState(alreadyCompleted);
@@ -196,9 +198,8 @@ export default function TodayClient({
     setNextStep(result.nextStep ?? null);
     setCompleted(true);
     setCelebrationActive(true);
-    const today = new Date().toISOString().slice(0, 10);
     setCompletedDates((prev) =>
-      prev.includes(today) ? prev : [...prev, today]
+      prev.includes(localDate) ? prev : [...prev, localDate]
     );
     setTimeout(() => setCelebrationActive(false), 2000);
   }

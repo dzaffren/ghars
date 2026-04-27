@@ -180,6 +180,7 @@ export default async function TodayPage() {
       circlePreview={circlePreview}
       journalEntry={journalEntry}
       completedDates14={completedDates}
+      localDate={localDate}
     />
   );
 }
