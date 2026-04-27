@@ -60,7 +60,12 @@ export default async function SurahPage({
     const match = list.find((c) => Number(c.id) === chId);
     if (match?.name_simple) chapterName = match.name_simple;
   } catch (err) {
-    console.error("[SurahPage] content fetch failed:", String(err));
+    console.error(
+      "[SurahPage] chapter",
+      chId,
+      "failed:",
+      err instanceof Error ? err.message : String(err)
+    );
     loadError = true;
   }
 

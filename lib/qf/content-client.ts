@@ -14,6 +14,10 @@ const CONTENT_OAUTH_URL =
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 async function getContentToken(): Promise<string> {
+  if (!BASE_URL) throw new Error("QF content: QF_BASE_URL env not set");
+  if (!CLIENT_ID || !CLIENT_SECRET)
+    throw new Error("QF content: client credentials missing");
+
   const now = Date.now();
   if (cachedToken && cachedToken.expiresAt > now + 30_000) {
     return cachedToken.token;
