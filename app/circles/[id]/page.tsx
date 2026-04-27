@@ -35,31 +35,48 @@ export default async function CircleDetailPage({
 
   if (!circle) notFound();
 
-  // Fetch all members with their public garden data
-  const { data: members } = await db
+  // Fetch members then gardens via explicit queries. Supabase's embedded
+  // resource syntax can silently drop rows when the relationship chain
+  // (circle_members → users → gardens) isn't resolved — we saw the detail
+  // view show 0 members while the list view showed the correct count.
+  const { data: memberRows } = await db
     .from("circle_members")
-    .select(
-      "user_id, users(display_name), gardens(growth_points, current_streak, wilting)"
-    )
+    .select("user_id, users(display_name)")
     .eq("circle_id", circleId);
 
-  const memberData = (members ?? []).map((m) => {
+  const userIds = (memberRows ?? []).map((m) => m.user_id);
+  const { data: gardenRows } = userIds.length
+    ? await db
+        .from("gardens")
+        .select("user_id, growth_points, current_streak, wilting")
+        .in("user_id", userIds)
+    : {
+        data: [] as Array<{
+          user_id: string;
+          growth_points: number;
+          current_streak: number;
+          wilting: boolean;
+        }>,
+      };
+
+  const gardenMap = new Map(
+    (gardenRows ?? []).map((g) => [g.user_id, g] as const)
+  );
+
+  const memberData = (memberRows ?? []).map((m) => {
     const u = Array.isArray(m.users) ? m.users[0] : m.users;
-    const g = Array.isArray(m.gardens) ? m.gardens[0] : m.gardens;
+    const g = gardenMap.get(m.user_id);
     return {
       userId: m.user_id,
       displayName:
         (u as { display_name: string | null } | null)?.display_name ?? "Member",
       isYou: m.user_id === session.userId,
       isOwner: m.user_id === circle.owner_id,
-      garden: g
-        ? {
-            growthPoints: (g as { growth_points: number }).growth_points ?? 0,
-            currentStreak:
-              (g as { current_streak: number }).current_streak ?? 0,
-            wilting: (g as { wilting: boolean }).wilting ?? false,
-          }
-        : { growthPoints: 0, currentStreak: 0, wilting: false },
+      garden: {
+        growthPoints: g?.growth_points ?? 0,
+        currentStreak: g?.current_streak ?? 0,
+        wilting: g?.wilting ?? false,
+      },
     };
   });
 
