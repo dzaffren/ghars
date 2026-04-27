@@ -13,11 +13,17 @@ export default async function Home() {
         loop
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        poster="/images/garden-loop-poster.jpg"
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{ background: "#faf7f0", opacity: 0.75 }}
       >
+        <source
+          src="/videos/garden-loop-mobile.mp4"
+          type="video/mp4"
+          media="(max-width: 768px)"
+        />
         <source src="/videos/garden-loop.mp4" type="video/mp4" />
       </video>
 
