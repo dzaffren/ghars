@@ -92,7 +92,6 @@ export function RadialNav() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.18 }}
-            onClick={() => setOpen(false)}
             className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm"
             aria-hidden="true"
           />
@@ -136,9 +135,12 @@ export function RadialNav() {
                     size={isActive ? 18 : 16}
                     strokeWidth={isActive ? 2.2 : 1.8}
                   />
-                  {/* Label — visible on hover/focus, or always for active */}
+                  {/* Label — placed above the icon so it doesn't get
+                      clipped by the viewport bottom (anchor sits at
+                      bottom-4). Visible on hover/focus, or always for
+                      the currently active route. */}
                   <span
-                    className={`pointer-events-none absolute top-full mt-1.5 whitespace-nowrap rounded-full bg-[#1a3a2a] px-2 py-0.5 text-[9px] font-semibold text-white shadow-md transition-opacity ${
+                    className={`pointer-events-none absolute bottom-full mb-1.5 whitespace-nowrap rounded-full bg-[#1a3a2a] px-2 py-0.5 text-[9px] font-semibold text-white shadow-md transition-opacity ${
                       isActive
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
