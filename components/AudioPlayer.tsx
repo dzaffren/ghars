@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Pause, Play } from "lucide-react";
+import { AlertTriangle, Loader2, Pause, Play } from "lucide-react";
 
 interface Props {
   url: string;
@@ -17,27 +17,44 @@ export default function AudioPlayer({
 }: Props) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  function ensureAudio() {
+    if (audioRef.current) return audioRef.current;
+    const a = new Audio(url);
+    a.onended = () => setPlaying(false);
+    a.oncanplay = () => setLoading(false);
+    a.onerror = () => {
+      console.error("[AudioPlayer] load failed:", url, a.error);
+      setError(true);
+      setLoading(false);
+      setPlaying(false);
+    };
+    audioRef.current = a;
+    return a;
+  }
+
   async function toggle() {
-    if (!audioRef.current) {
-      setLoading(true);
-      audioRef.current = new Audio(url);
-      audioRef.current.onended = () => setPlaying(false);
-      audioRef.current.oncanplay = () => setLoading(false);
-    }
+    setError(false);
+    const audio = ensureAudio();
 
     if (playing) {
-      audioRef.current.pause();
+      audio.pause();
       setPlaying(false);
-    } else {
-      setLoading(true);
-      try {
-        await audioRef.current.play();
-        setPlaying(true);
-      } finally {
-        setLoading(false);
-      }
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await audio.play();
+      setPlaying(true);
+    } catch (err) {
+      console.error("[AudioPlayer] play() rejected:", url, err);
+      setError(true);
+      setPlaying(false);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -46,22 +63,31 @@ export default function AudioPlayer({
   const lightClass =
     "border-primary/40 text-primary hover:border-primary hover:bg-primary/10";
 
+  const buttonLabel = error
+    ? "Unavailable — tap to retry"
+    : playing
+      ? "Pause"
+      : label;
+
   return (
     <Button
       variant="outline"
       size="sm"
       onClick={toggle}
-      aria-label={playing ? "Pause recitation" : label}
+      aria-label={buttonLabel}
+      title={error ? "Audio failed to load. Tap to retry." : undefined}
       className={`rounded-full ${tone === "dark" ? darkClass : lightClass}`}
     >
       {loading ? (
         <Loader2 className="animate-spin" />
+      ) : error ? (
+        <AlertTriangle />
       ) : playing ? (
         <Pause />
       ) : (
         <Play />
       )}
-      {playing ? "Pause" : label}
+      {error ? "Unavailable" : playing ? "Pause" : label}
     </Button>
   );
 }
