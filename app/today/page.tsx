@@ -72,7 +72,9 @@ export default async function TodayPage() {
       .limit(1),
     db
       .from("reflections")
-      .select("id, missions:mission_id(local_date, mission_text), depth_score")
+      .select(
+        "id, missions:mission_id(id, local_date, mission_text), depth_score"
+      )
       .eq("user_id", uid)
       .eq("llm_verdict", "accepted")
       .order("created_at", { ascending: false })
@@ -132,7 +134,7 @@ export default async function TodayPage() {
       : latestReflection.missions;
     if (m) {
       journalEntry = {
-        id: latestReflection.id,
+        id: (m as { id: string }).id,
         local_date: (m as { local_date: string }).local_date,
         mission_text: (m as { mission_text: string }).mission_text,
         depth_score: latestReflection.depth_score,
