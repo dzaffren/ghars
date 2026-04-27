@@ -4,10 +4,11 @@
 -- dhikr types raced: both reads saw the same pre-state, then each write
 -- set only its field and the later write clobbered the earlier one.
 --
--- This function locks the row with FOR UPDATE, increments one field if
--- under its target, marks completed when all three targets are met, and
--- returns the new state plus a just_completed flag for the caller to
--- award garden growth points.
+-- Uses INSERT ... ON CONFLICT DO UPDATE RETURNING to atomically
+-- create-or-lock the row in a single statement, then immediately
+-- re-selects with FOR UPDATE (now a no-op on the locked row) to get a
+-- consistent view. SECURITY INVOKER + fixed search_path to prevent
+-- search_path hijack from untrusted roles.
 
 create or replace function dhikr_increment(
   p_user_id uuid,
@@ -21,34 +22,28 @@ create or replace function dhikr_increment(
   just_completed boolean
 )
 language plpgsql
+security invoker
+set search_path = public, pg_temp
 as $$
 declare
-  v_target int;
   v_subhan int;
   v_alhamd int;
   v_akbar int;
   v_completed boolean;
   v_just_completed boolean := false;
 begin
-  v_target := case p_type
-    when 'subhan' then 33
-    when 'alhamd' then 33
-    when 'akbar' then 34
-    else 0
-  end;
-  if v_target = 0 then
+  if p_type not in ('subhan', 'alhamd', 'akbar') then
     raise exception 'invalid dhikr type: %', p_type;
   end if;
 
+  -- Create-or-lock in one statement. The conflicting row is locked by
+  -- ON CONFLICT DO UPDATE, so concurrent callers serialize here.
   insert into dhikr_log (user_id, local_date)
   values (p_user_id, p_local_date)
-  on conflict (user_id, local_date) do nothing;
-
-  select dl.subhan, dl.alhamd, dl.akbar, dl.completed
-    into v_subhan, v_alhamd, v_akbar, v_completed
-  from dhikr_log dl
-  where dl.user_id = p_user_id and dl.local_date = p_local_date
-  for update;
+  on conflict (user_id, local_date)
+    do update set updated_at = dhikr_log.updated_at
+  returning dhikr_log.subhan, dhikr_log.alhamd, dhikr_log.akbar, dhikr_log.completed
+    into v_subhan, v_alhamd, v_akbar, v_completed;
 
   if v_completed then
     return query select v_subhan, v_alhamd, v_akbar, v_completed, false;
