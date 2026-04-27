@@ -43,40 +43,29 @@ export async function POST(req: NextRequest) {
 
   const db = createServerClient();
 
-  // Upsert the dhikr row for today, incrementing the chosen counter
-  const { data: existing } = await db
-    .from("dhikr_log")
-    .select("subhan, alhamd, akbar, completed")
-    .eq("user_id", session.userId)
-    .eq("local_date", localDate)
-    .single();
+  const { data, error } = await db.rpc("dhikr_increment", {
+    p_user_id: session.userId,
+    p_local_date: localDate,
+    p_type: type,
+  });
 
-  // Don't exceed the target for any counter
-  const current = existing ?? {
-    subhan: 0,
-    alhamd: 0,
-    akbar: 0,
-    completed: false,
-  };
-  if (current.completed || current[type] >= TARGETS[type]) {
-    return NextResponse.json({ ...current, targets: TARGETS });
+  if (error || !data?.[0]) {
+    console.error("[dhikr] rpc failed:", error);
+    return NextResponse.json(
+      { error: "Could not update dhikr" },
+      { status: 500 }
+    );
   }
 
-  const updated = {
-    ...current,
-    [type]: current[type] + 1,
+  const row = data[0] as {
+    subhan: number;
+    alhamd: number;
+    akbar: number;
+    completed: boolean;
+    just_completed: boolean;
   };
 
-  // Check if all three now reach their targets
-  const nowComplete =
-    updated.subhan >= TARGETS.subhan &&
-    updated.alhamd >= TARGETS.alhamd &&
-    updated.akbar >= TARGETS.akbar;
-
-  if (nowComplete && !current.completed) {
-    updated.completed = true;
-
-    // Award +3 growth points to the garden (best-effort — don't fail the request)
+  if (row.just_completed) {
     const { data: garden } = await db
       .from("gardens")
       .select("growth_points")
@@ -94,25 +83,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  await db.from("dhikr_log").upsert({
-    user_id: session.userId,
-    local_date: localDate,
-    subhan: updated.subhan,
-    alhamd: updated.alhamd,
-    akbar: updated.akbar,
-    completed: updated.completed,
-    updated_at: new Date().toISOString(),
-  });
-
   logEvent("dhikr_increment", {
     userId: session.userId,
     type,
-    count: updated[type],
-    justCompleted: nowComplete,
+    count: row[type],
+    justCompleted: row.just_completed,
   });
+
   return NextResponse.json({
-    ...updated,
+    subhan: row.subhan,
+    alhamd: row.alhamd,
+    akbar: row.akbar,
+    completed: row.completed,
+    justCompleted: row.just_completed,
     targets: TARGETS,
-    justCompleted: nowComplete,
   });
 }
