@@ -5,22 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import {
-  Home,
-  Compass,
-  BookMarked,
-  Users,
-  History,
-  LogOut,
-} from "lucide-react";
-
-const TABS = [
-  { href: "/today", icon: Home, label: "Today" },
-  { href: "/explore", icon: Compass, label: "Explore" },
-  { href: "/dhikr", icon: BookMarked, label: "Tasbih" },
-  { href: "/circles", icon: Users, label: "Circles" },
-  { href: "/history", icon: History, label: "History" },
-] as const;
+import { LogOut } from "lucide-react";
 
 const HIDE_NAV_ON = ["/", "/onboarding"];
 
@@ -89,40 +74,6 @@ export default function AppHeader({ className = "" }: Props) {
             </form>
           )}
         </div>
-
-        {/* Nav tabs row */}
-        {showNav && (
-          <div className="flex items-stretch border-t border-[var(--green-fog)]/60">
-            {TABS.map(({ href, icon: Icon, label }) => {
-              const active =
-                pathname === href || pathname.startsWith(href + "/");
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-                    active
-                      ? "text-primary"
-                      : "text-[var(--ink-soft)]/50 hover:text-[var(--ink-soft)]"
-                  }`}
-                >
-                  <Icon
-                    size={18}
-                    strokeWidth={active ? 2.2 : 1.7}
-                    className="transition-all"
-                  />
-                  <span
-                    className={`text-[9px] font-medium tracking-wide ${
-                      active ? "opacity-100" : "opacity-60"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </div>
     </motion.header>
   );

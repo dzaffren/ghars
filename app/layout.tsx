@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { RadialNav } from "@/components/RadialNav";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
       >
         <ServiceWorkerRegister />
         {children}
+        <RadialNav />
       </body>
     </html>
   );
