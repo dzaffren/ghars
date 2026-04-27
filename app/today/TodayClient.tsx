@@ -157,6 +157,7 @@ export default function TodayClient({
 }: Props) {
   const [garden, setGarden] = useState<Garden>(initialGarden);
   const [completed, setCompleted] = useState(alreadyCompleted);
+  const [completedDates, setCompletedDates] = useState(completedDates14);
   const [showTafsir, setShowTafsir] = useState(false);
   const [bookmarkState, setBookmarkState] = useState<
     "idle" | "syncing" | "synced" | "failed"
@@ -195,6 +196,10 @@ export default function TodayClient({
     setNextStep(result.nextStep ?? null);
     setCompleted(true);
     setCelebrationActive(true);
+    const today = new Date().toISOString().slice(0, 10);
+    setCompletedDates((prev) =>
+      prev.includes(today) ? prev : [...prev, today]
+    );
     setTimeout(() => setCelebrationActive(false), 2000);
   }
 
@@ -215,7 +220,6 @@ export default function TodayClient({
   }
 
   const firstName = displayName ? displayName.split(" ")[0] : "";
-  const today14done = completedDates14.length;
 
   return (
     <div className="relative min-h-screen">
@@ -442,8 +446,8 @@ export default function TodayClient({
               <JournalWidget entry={journalEntry} />
             </div>
             <HeatmapStripWidget
-              completedDates={completedDates14}
-              totalDone={today14done}
+              completedDates={completedDates}
+              totalDone={completedDates.length}
             />
           </div>
         </div>
