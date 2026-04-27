@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, Pause, Play } from "lucide-react";
 
@@ -20,6 +20,15 @@ export default function AudioPlayer({
   const [error, setError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Pause audio if the component unmounts mid-playback so it doesn't
+  // keep playing after the UI is gone.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
   function ensureAudio() {
     if (audioRef.current) return audioRef.current;
     const a = new Audio(url);
@@ -30,6 +39,8 @@ export default function AudioPlayer({
       setError(true);
       setLoading(false);
       setPlaying(false);
+      // Drop the broken element so a subsequent tap builds a fresh one.
+      audioRef.current = null;
     };
     audioRef.current = a;
     return a;
@@ -53,6 +64,8 @@ export default function AudioPlayer({
       console.error("[AudioPlayer] play() rejected:", url, err);
       setError(true);
       setPlaying(false);
+      // Drop the broken element so a subsequent tap builds a fresh one.
+      audioRef.current = null;
     } finally {
       setLoading(false);
     }
