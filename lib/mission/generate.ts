@@ -37,18 +37,36 @@ export async function getOrCreateTodaysMission(userId: string) {
     .order("local_date", { ascending: false })
     .limit(7);
 
-  const recentKeys = (recent ?? []).map((r: { verse_key: string }) => r.verse_key);
+  const recentKeys = (recent ?? []).map(
+    (r: { verse_key: string }) => r.verse_key
+  );
 
   // LLM picks verse + mission
-  const llm = await getLLMProvider();
-  const picked = await llm.pickMission({
-    focusAreas: user.focus_areas ?? [],
-    recentVerseKeys: recentKeys,
-    actionablePool,
-  });
+  let picked;
+  try {
+    const llm = await getLLMProvider();
+    picked = await llm.pickMission({
+      focusAreas: user.focus_areas ?? [],
+      recentVerseKeys: recentKeys,
+      actionablePool,
+    });
+  } catch (err) {
+    console.error("[mission/generate] LLM pickMission failed", { userId, err });
+    throw new Error("mission_llm_failed");
+  }
 
   // Fetch full verse data (Arabic + translation + tafsir + audio)
-  const verseData = await fetchVerse(picked.verseKey);
+  let verseData;
+  try {
+    verseData = await fetchVerse(picked.verseKey);
+  } catch (err) {
+    console.error("[mission/generate] QF fetchVerse failed", {
+      userId,
+      verseKey: picked.verseKey,
+      err,
+    });
+    throw new Error("mission_verse_fetch_failed");
+  }
 
   // Store mission
   const { data: mission, error: insertErr } = await db
@@ -67,7 +85,10 @@ export async function getOrCreateTodaysMission(userId: string) {
     .select()
     .single();
 
-  if (insertErr) throw new Error(`Failed to create mission: ${insertErr.message}`);
+  if (insertErr) {
+    console.error("[mission/generate] insert failed", { userId, insertErr });
+    throw new Error("mission_insert_failed");
+  }
   return mission;
 }
 
