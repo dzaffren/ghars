@@ -27,6 +27,7 @@ import JournalWidget, {
   type JournalEntryPreview,
 } from "@/components/dashboard/JournalWidget";
 import HeatmapStripWidget from "@/components/dashboard/HeatmapStripWidget";
+import ExploreWidget from "@/components/dashboard/ExploreWidget";
 import { getStageProgress } from "@/lib/garden/stages";
 import type { TreeState } from "@/components/GardenTree";
 import type { VerseWord } from "@/lib/qf/content-client";
@@ -446,6 +447,7 @@ export default function TodayClient({
               <WordWidget word={wordOfDay ?? null} />
               <JournalWidget entry={journalEntry} />
             </div>
+            <ExploreWidget />
             <HeatmapStripWidget
               completedDates={completedDates}
               totalDone={completedDates.length}
