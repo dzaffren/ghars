@@ -6,7 +6,7 @@ export default function ExploreWidget() {
     <DashboardCard href="/explore">
       <div className="flex items-center gap-3">
         <div className="rounded-xl bg-[var(--green-fog)] p-2">
-          <Compass size={20} className="text-primary" />
+          <Compass size={20} className="text-primary" aria-hidden />
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--ink-soft)]/60">
