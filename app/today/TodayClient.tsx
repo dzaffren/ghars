@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Loader2,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import AudioPlayer from "@/components/AudioPlayer";
 import ReflectionForm from "@/components/ReflectionForm";
@@ -226,6 +227,7 @@ export default function TodayClient({
               onClick={() => router.refresh()}
               className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-white px-4 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
             >
+              <RefreshCw size={13} />
               Try again
             </button>
           </div>

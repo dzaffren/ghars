@@ -82,10 +82,13 @@ export async function GET(req: NextRequest) {
 
     const derivedName = deriveDisplayName(claims);
     if (derivedName && !user.display_name) {
-      await db
+      const { error: nameErr } = await db
         .from("users")
         .update({ display_name: derivedName })
         .eq("id", user.id);
+      if (nameErr) {
+        console.error("[callback] display_name backfill failed", nameErr);
+      }
     }
 
     await db

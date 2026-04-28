@@ -52,7 +52,7 @@ export async function getOrCreateTodaysMission(userId: string) {
     });
   } catch (err) {
     console.error("[mission/generate] LLM pickMission failed", { userId, err });
-    throw new Error("mission_llm_failed");
+    throw new Error("mission_llm_failed", { cause: err });
   }
 
   // Fetch full verse data (Arabic + translation + tafsir + audio)
@@ -65,7 +65,7 @@ export async function getOrCreateTodaysMission(userId: string) {
       verseKey: picked.verseKey,
       err,
     });
-    throw new Error("mission_verse_fetch_failed");
+    throw new Error("mission_verse_fetch_failed", { cause: err });
   }
 
   // Store mission
@@ -87,7 +87,7 @@ export async function getOrCreateTodaysMission(userId: string) {
 
   if (insertErr) {
     console.error("[mission/generate] insert failed", { userId, insertErr });
-    throw new Error("mission_insert_failed");
+    throw new Error("mission_insert_failed", { cause: insertErr });
   }
   return mission;
 }
