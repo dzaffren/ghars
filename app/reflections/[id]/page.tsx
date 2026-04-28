@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import AppHeader from "@/components/AppHeader";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Info } from "lucide-react";
 
 function formatDate(dateStr: string) {
   try {
@@ -18,19 +18,36 @@ function formatDate(dateStr: string) {
   }
 }
 
-function DepthStars({ score }: { score: number | null }) {
+function DepthStarsWithLegend({ score }: { score: number | null }) {
   if (!score) return null;
   return (
-    <span className="flex gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          className={`text-sm ${i < score ? "text-[#d4a017]" : "text-muted-foreground/25"}`}
-        >
-          ★
+    <details className="relative">
+      <summary className="flex cursor-pointer items-center gap-1 list-none">
+        <span className="flex gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span
+              key={i}
+              className={`text-sm ${i < score ? "text-[#d4a017]" : "text-muted-foreground/25"}`}
+            >
+              ★
+            </span>
+          ))}
         </span>
-      ))}
-    </span>
+        <Info
+          size={12}
+          className="text-muted-foreground/60"
+          aria-label="What do the stars mean?"
+        />
+      </summary>
+      <div className="absolute right-0 z-10 mt-1.5 w-56 rounded-xl border border-[var(--green-fog)] bg-white/95 p-3 shadow-lg text-[11px] leading-snug space-y-1">
+        <p className="font-semibold text-[#1a3a2a]">Reflection depth</p>
+        <p className="text-muted-foreground">★ surface note</p>
+        <p className="text-muted-foreground">★★ brief thought</p>
+        <p className="text-muted-foreground">★★★ thoughtful</p>
+        <p className="text-muted-foreground">★★★★ deep</p>
+        <p className="text-muted-foreground">★★★★★ profound introspection</p>
+      </div>
+    </details>
   );
 }
 
@@ -131,7 +148,7 @@ export default async function ReflectionDetailPage({
                   Your reflection
                 </p>
                 <div className="flex items-center gap-2">
-                  <DepthStars score={ref.depth_score ?? null} />
+                  <DepthStarsWithLegend score={ref.depth_score ?? null} />
                   {!accepted && (
                     <span className="text-[10px] text-muted-foreground">
                       not completed
