@@ -4,6 +4,25 @@ import { exchangeCodeForTokens, decodeIdToken } from "@/lib/auth/qf-oauth";
 import { getSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 
+function deriveDisplayName(claims: {
+  name?: string | null;
+  given_name?: string | null;
+  preferred_username?: string | null;
+  email?: string | null;
+}): string | null {
+  const candidates = [
+    claims.name,
+    claims.given_name,
+    claims.preferred_username,
+    claims.email?.split("@")[0],
+  ];
+  for (const c of candidates) {
+    const trimmed = c?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
@@ -47,19 +66,26 @@ export async function GET(req: NextRequest) {
         {
           qf_sub: claims.sub,
           email: claims.email ?? null,
-          display_name: claims.name ?? claims.given_name ?? null,
           qf_access_token: tokens.access_token,
           qf_refresh_token: tokens.refresh_token,
           qf_token_expires_at: expiresAt,
         },
         { onConflict: "qf_sub" }
       )
-      .select("id, focus_areas, qf_goal_id")
+      .select("id, focus_areas, qf_goal_id, display_name")
       .single();
 
     if (error || !user) {
       console.error("DB upsert error:", error);
       return NextResponse.redirect(new URL("/?error=db_error", req.url));
+    }
+
+    const derivedName = deriveDisplayName(claims);
+    if (derivedName && !user.display_name) {
+      await db
+        .from("users")
+        .update({ display_name: derivedName })
+        .eq("id", user.id);
     }
 
     await db

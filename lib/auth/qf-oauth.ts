@@ -153,6 +153,7 @@ export interface QFIdTokenClaims {
   given_name?: string;
   family_name?: string;
   name?: string;
+  preferred_username?: string;
   picture?: string;
   nonce?: string;
   iss: string;
