@@ -22,12 +22,16 @@ const TABS = [
   { href: "/reflections", icon: BookOpen, label: "Journal" },
 ] as const;
 
-// Anchored bottom-right — orbit opens up-left into the safe thumb zone.
-// 180° = straight left, 270° = straight up. Start at 170° so the first
-// item tucks slightly below horizontal to avoid any chrome pinned to the
-// bottom edge. 120° sweep (vs. the previous 90°) gives items breathing room.
-const START_DEG = 170;
-const END_DEG = 290;
+// Anchored bottom-right — orbit opens into the upper-left quadrant.
+// The math-angle convention (x = cos, y = -sin) used below means:
+//   90°  = straight up      (y = -R)
+//   180° = straight left    (x = -R, y = 0)
+//   200° = left + slightly below horizontal
+//   100° = up + slightly right-of-vertical
+// Sweeping 100° → 200° keeps all items above/left of the anchor so they
+// remain inside the viewport even on short mobile screens.
+const START_DEG = 100;
+const END_DEG = 200;
 const RADIUS = 132;
 const HIDE_ON = ["/", "/onboarding", "/callback"];
 const SEEN_KEY = "ghars_radial_seen";
