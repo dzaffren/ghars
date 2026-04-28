@@ -25,13 +25,13 @@ const TABS = [
 // Anchored bottom-right — orbit opens into the upper-left quadrant.
 // The math-angle convention (x = cos, y = -sin) used below means:
 //   90°  = straight up      (y = -R)
-//   180° = straight left    (x = -R, y = 0)
-//   200° = left + slightly below horizontal
 //   100° = up + slightly right-of-vertical
-// Sweeping 100° → 200° keeps all items above/left of the anchor so they
-// remain inside the viewport even on short mobile screens.
+//   180° = straight left    (x = -R, y = 0)
+// Sweeping 100° → 180° keeps all items at y ≤ 0 (at or above the anchor
+// center), so nothing can clip below the viewport on short mobile screens
+// even with a home-indicator safe area.
 const START_DEG = 100;
-const END_DEG = 200;
+const END_DEG = 180;
 const RADIUS = 132;
 const HIDE_ON = ["/", "/onboarding", "/callback"];
 const SEEN_KEY = "ghars_radial_seen";
