@@ -31,17 +31,22 @@ export default async function TodayPage() {
   if (!user?.focus_areas?.length) redirect("/onboarding");
 
   await checkWilting(uid);
-  const mission = await getOrCreateTodaysMission(uid);
+  let mission: Awaited<ReturnType<typeof getOrCreateTodaysMission>> | null =
+    null;
+  try {
+    mission = await getOrCreateTodaysMission(uid);
+  } catch (err) {
+    console.error("[today/page] getOrCreateTodaysMission failed", { uid, err });
+  }
 
   const localDate = getLocalDate(user.timezone ?? "UTC");
   const today14Start = new Date();
-  today14Start.setDate(today14Start.getDate() - 13); // 14 days → 2 rows of 7
+  today14Start.setDate(today14Start.getDate() - 13);
   const from14 = today14Start.toISOString().slice(0, 10);
 
-  // All dashboard data fetched in one parallel batch
   const [
     { data: garden },
-    { data: reflection },
+    reflectionResult,
     verseWords,
     { data: dhikrRow },
     { data: circleMemberships },
@@ -53,12 +58,16 @@ export default async function TodayPage() {
       .select("growth_points, current_streak, longest_streak, wilting")
       .eq("user_id", uid)
       .single(),
-    db
-      .from("reflections")
-      .select("llm_verdict")
-      .eq("mission_id", mission.id)
-      .single(),
-    fetchVerseWords(mission.verse_key),
+    mission
+      ? db
+          .from("reflections")
+          .select("llm_verdict")
+          .eq("mission_id", mission.id)
+          .single()
+      : Promise.resolve({ data: null }),
+    mission
+      ? fetchVerseWords(mission.verse_key)
+      : Promise.resolve([] as VerseWord[]),
     db
       .from("dhikr_log")
       .select("subhan, alhamd, akbar, completed")
@@ -86,6 +95,8 @@ export default async function TodayPage() {
       .eq("user_id", uid)
       .gte("local_date", from14),
   ]);
+
+  const reflection = reflectionResult.data;
 
   // Build circles preview (up to 3 members of first circle)
   let circlePreview: CirclePreview[] = [];

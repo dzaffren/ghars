@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
@@ -64,7 +65,7 @@ interface TasbihData {
 }
 
 interface Props {
-  mission: Mission;
+  mission: Mission | null;
   garden: Garden;
   alreadyCompleted: boolean;
   displayName: string;
@@ -158,6 +159,7 @@ export default function TodayClient({
   completedDates14,
   localDate,
 }: Props) {
+  const router = useRouter();
   const [garden, setGarden] = useState<Garden>(initialGarden);
   const [completed, setCompleted] = useState(alreadyCompleted);
   const [completedDates, setCompletedDates] = useState(completedDates14);
@@ -205,7 +207,35 @@ export default function TodayClient({
     setTimeout(() => setCelebrationActive(false), 2000);
   }
 
+  const firstName = displayName ? displayName.split(" ")[0] : "";
+
+  if (!mission) {
+    return (
+      <div className="relative min-h-screen">
+        <AppHeader variant="today" />
+        <main className="mx-auto w-full max-w-md px-4 pb-8 pt-6">
+          <div className="rounded-2xl border border-[var(--green-fog)] bg-white/80 p-6 text-center space-y-3">
+            <p className="text-sm font-semibold text-[#1a3a2a]">
+              We couldn&apos;t prepare today&apos;s mission.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This usually means a service we depend on is having a moment. Try
+              again.
+            </p>
+            <button
+              onClick={() => router.refresh()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-white px-4 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   async function handleBookmark() {
+    if (!mission) return;
     if (bookmarkState === "syncing" || bookmarkState === "synced") return;
     setBookmarkState("syncing");
     try {
@@ -220,8 +250,6 @@ export default function TodayClient({
       setBookmarkState("failed");
     }
   }
-
-  const firstName = displayName ? displayName.split(" ")[0] : "";
 
   return (
     <div className="relative min-h-screen">
