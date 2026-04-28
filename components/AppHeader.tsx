@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 const HIDE_NAV_ON = ["/", "/onboarding"];
 
@@ -49,19 +49,30 @@ export default function AppHeader({ className = "" }: Props) {
       <div className="relative mx-auto max-w-md px-4">
         {/* Logo row */}
         <div className="flex items-center justify-between py-2.5">
-          <Link href="/today" className="flex items-center gap-2">
-            <Image
-              src="/logo.png"
-              alt=""
-              width={24}
-              height={24}
-              priority
-              className="select-none"
-            />
-            <span className="text-sm font-semibold tracking-tight text-[#1a3a2a]/85">
-              Ghars
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {showNav && pathname !== "/today" && (
+              <Link
+                href="/today"
+                aria-label="Back to home"
+                className="flex items-center justify-center rounded-md p-1.5 text-[#1a3a2a]/60 transition-colors hover:text-[#1a3a2a]"
+              >
+                <ArrowLeft size={18} strokeWidth={1.8} />
+              </Link>
+            )}
+            <Link href="/today" className="flex items-center gap-2">
+              <Image
+                src="/logo.png"
+                alt=""
+                width={24}
+                height={24}
+                priority
+                className="select-none"
+              />
+              <span className="text-sm font-semibold tracking-tight text-[#1a3a2a]/85">
+                Ghars
+              </span>
+            </Link>
+          </div>
           {showNav && (
             <form action="/api/auth/logout" method="POST">
               <button
