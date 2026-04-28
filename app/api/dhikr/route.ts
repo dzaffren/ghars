@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { logEvent } from "@/lib/log";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
@@ -89,6 +90,8 @@ export async function POST(req: NextRequest) {
     count: row[type],
     justCompleted: row.just_completed,
   });
+
+  revalidatePath("/today");
 
   return NextResponse.json({
     subhan: row.subhan,
