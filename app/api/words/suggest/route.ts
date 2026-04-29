@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     transliteration: string;
     meaning: string;
     reason: string;
+    root: string | null;
   }>;
 
   try {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
           transliteration: word.transliteration,
           meaning: word.translation,
           reason: s.reason,
+          root: word.root_id ?? null,
         };
       })
       .filter((s): s is NonNullable<typeof s> => s !== null);

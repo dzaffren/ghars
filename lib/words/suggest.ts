@@ -37,6 +37,7 @@ export interface WordSuggestion {
   transliteration: string;
   meaning: string;
   reason: string;
+  root: string | null;
 }
 
 export function heuristicSuggest(
@@ -54,6 +55,7 @@ export function heuristicSuggest(
       transliteration: w.transliteration,
       meaning: w.translation,
       reason: "High-frequency Quranic root word",
+      root: w.root_id ?? null,
     });
   }
   return results;

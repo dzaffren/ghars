@@ -7,6 +7,11 @@ security definer
 set search_path = public
 as $$
 begin
+  -- Ensure row exists before incrementing
+  insert into gardens (user_id, known_word_count, next_unlock_threshold)
+  values (p_user_id, 0, 10)
+  on conflict (user_id) do nothing;
+
   update gardens
   set known_word_count = gardens.known_word_count + 1
   where user_id = p_user_id;

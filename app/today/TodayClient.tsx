@@ -203,6 +203,7 @@ export default function TodayClient({
   const [pendingReviews, setPendingReviews] = useState<DueWord[]>(dueWords);
   const [currentReviewIdx, setCurrentReviewIdx] = useState(0);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState(false);
   const [showWordSuggest, setShowWordSuggest] = useState(false);
   const [suggestedWords, setSuggestedWords] = useState<
     Array<{
@@ -243,6 +244,7 @@ export default function TodayClient({
     wordId: string,
     rating: "again" | "hard" | "good" | "easy"
   ) {
+    setReviewError(false);
     setReviewSubmitting(true);
     try {
       const res = await fetch(`/api/words/${wordId}/review`, {
@@ -272,7 +274,7 @@ export default function TodayClient({
       // Advance to next review card
       setCurrentReviewIdx((i) => i + 1);
     } catch {
-      // ignore
+      setReviewError(true);
     } finally {
       setReviewSubmitting(false);
     }
@@ -377,12 +379,17 @@ export default function TodayClient({
 
         {/* Word review card — shown when there are due words */}
         {pendingReviews[currentReviewIdx] && (
-          <div className="mx-auto w-full max-w-sm">
+          <div className="mx-auto w-full max-w-sm space-y-1">
             <WordReviewCard
               word={pendingReviews[currentReviewIdx]}
               onRated={handleWordRated}
               isSubmitting={reviewSubmitting}
             />
+            {reviewError && (
+              <p className="text-center text-xs text-red-500">
+                Could not save — tap a rating to retry.
+              </p>
+            )}
           </div>
         )}
 

@@ -11,6 +11,7 @@ interface Suggestion {
   transliteration: string;
   meaning: string;
   reason: string;
+  root?: string | null;
 }
 
 interface Props {
@@ -50,7 +51,7 @@ export default function WordSuggestCard({
             arabic: s.arabic,
             transliteration: s.transliteration,
             meaning: s.meaning,
-            root: null,
+            root: s.root ?? null,
           }),
         }).then((r) => {
           if (!r.ok) throw new Error("add failed");

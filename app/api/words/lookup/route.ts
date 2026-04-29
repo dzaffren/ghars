@@ -48,10 +48,10 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     word: {
-      arabic,
+      arabic: wordData.text_uthmani,
       transliteration: wordData.transliteration,
       meaning: wordData.translation,
-      root: null,
+      root: wordData.root_id ?? null,
     },
     inDeck: deckEntry != null,
     deckEntry: deckEntry ?? null,
