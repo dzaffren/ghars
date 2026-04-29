@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getOrCreateTodaysMission, getLocalDate } from "@/lib/mission/generate";
 import { createServerClient } from "@/lib/supabase/server";
-import { checkWilting } from "@/lib/mission/judge";
 import { fetchVerseWords, type VerseWord } from "@/lib/qf/content-client";
 import { getWeeklyTheme, getISOWeek } from "@/lib/mission/weekly-theme";
 import type { CirclePreview } from "@/components/dashboard/CirclesWidget";
@@ -30,7 +29,6 @@ export default async function TodayPage() {
 
   if (!user?.focus_areas?.length) redirect("/onboarding");
 
-  await checkWilting(uid);
   let mission: Awaited<ReturnType<typeof getOrCreateTodaysMission>> | null =
     null;
   try {

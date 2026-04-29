@@ -106,27 +106,3 @@ export async function submitReflection(
     currentStreak: newStreak,
   };
 }
-
-// Check & apply wilting for missed days
-export async function checkWilting(userId: string): Promise<void> {
-  const db = createServerClient();
-  const { data: garden } = await db
-    .from("gardens")
-    .select("last_completed_date, wilting, current_streak")
-    .eq("user_id", userId)
-    .single();
-
-  if (!garden || !garden.last_completed_date) return;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-
-  if (garden.last_completed_date < yesterday && !garden.wilting) {
-    await db
-      .from("gardens")
-      .update({ wilting: true, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
-  }
-}

@@ -121,6 +121,9 @@ async function applyWiltingCheck(
     .toISOString()
     .slice(0, 10);
   if (garden.last_completed_date < yesterday && !garden.wilting) {
-    await db.from("gardens").update({ wilting: true }).eq("user_id", userId);
+    await db
+      .from("gardens")
+      .update({ wilting: true, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
   }
 }
