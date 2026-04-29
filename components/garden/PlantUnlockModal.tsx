@@ -32,6 +32,9 @@ export default function PlantUnlockModal({ species, onClose, isOpen }: Props) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onClose();
+          }}
         >
           {/* Backdrop */}
           <motion.div
@@ -43,6 +46,9 @@ export default function PlantUnlockModal({ species, onClose, isOpen }: Props) {
           {/* Card */}
           <motion.div
             className="relative z-10 mx-4 w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unlock-modal-title"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
@@ -59,7 +65,10 @@ export default function PlantUnlockModal({ species, onClose, isOpen }: Props) {
             </div>
 
             {/* Title */}
-            <h2 className="text-center text-2xl font-bold text-gray-900 mb-1">
+            <h2
+              id="unlock-modal-title"
+              className="text-center text-2xl font-bold text-gray-900 mb-1"
+            >
               {capitalize(species)}
             </h2>
             <p className="text-center text-gray-600 mb-5">
@@ -77,6 +86,7 @@ export default function PlantUnlockModal({ species, onClose, isOpen }: Props) {
             {/* Continue button */}
             <button
               onClick={onClose}
+              autoFocus
               className="w-full rounded-2xl bg-green-600 py-3 text-base font-semibold text-white shadow-sm hover:bg-green-700 active:bg-green-800 transition-colors"
             >
               Continue

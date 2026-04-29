@@ -5,6 +5,7 @@ import SpeciesPlant, { type Species } from "./SpeciesPlant";
 
 const GardenTree = dynamic(() => import("@/components/GardenTree"), {
   ssr: false,
+  loading: () => <div style={{ width: 140, height: 140 }} aria-hidden />,
 });
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export default function GardenGrove({
       {lockedCount > 1 &&
         Array.from({ length: lockedCount - 1 }).map((_, i) => (
           <div
-            key={i}
+            key={`locked-${i}`}
             className="flex-none flex flex-col items-center justify-center"
           >
             <LockedSlot label="Locked" />

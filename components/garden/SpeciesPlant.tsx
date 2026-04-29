@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 export type Species = "olive" | "palm" | "fig" | "pomegranate";
@@ -930,7 +931,7 @@ function PomStage5() {
 }
 
 // ── Stage component dispatch ──────────────────────────────────────
-type StageFn = () => React.ReactElement;
+type StageFn = () => React.JSX.Element;
 
 const STAGES: Record<Species, Record<1 | 2 | 3 | 4 | 5, StageFn>> = {
   olive: {
