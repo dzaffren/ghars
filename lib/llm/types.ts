@@ -30,7 +30,6 @@ export interface JudgeReflectionResult {
 }
 
 export interface SuggestWordsInput {
-  verseKey: string;
   verseArabic: string;
   verseTranslation: string;
   knownWords: Array<{ arabic: string; root: string | null }>;

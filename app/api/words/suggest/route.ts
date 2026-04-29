@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
   try {
     const llm = await getLLMProvider();
     const llmResult = await llm.suggestWords({
-      verseKey: verse_key,
       verseArabic: verse_arabic,
       verseTranslation: verse_translation,
       knownWords,
@@ -76,7 +75,11 @@ export async function POST(req: NextRequest) {
       .filter((s): s is NonNullable<typeof s> => s !== null);
 
     if (suggestions.length === 0) throw new Error("no valid positions");
-  } catch {
+  } catch (err) {
+    console.error("[words/suggest] LLM suggestWords failed, using heuristic", {
+      verseKey: verse_key,
+      err,
+    });
     suggestions = heuristicSuggest(words);
   }
 
