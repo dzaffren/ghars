@@ -27,7 +27,10 @@ export async function getOrCreateTodaysMission(userId: string) {
     .eq("local_date", localDate)
     .single();
 
-  if (existing) return existing;
+  if (existing) {
+    await applyWiltingCheck(userId, db);
+    return existing;
+  }
 
   // Fetch recent verse keys to avoid repetition (last 7 days)
   const { data: recent } = await db
@@ -89,6 +92,7 @@ export async function getOrCreateTodaysMission(userId: string) {
     console.error("[mission/generate] insert failed", { userId, insertErr });
     throw new Error("mission_insert_failed", { cause: insertErr });
   }
+  await applyWiltingCheck(userId, db);
   return mission;
 }
 
@@ -98,5 +102,25 @@ export function getLocalDate(timezone: string): string {
     return format(zoned, "yyyy-MM-dd");
   } catch {
     return format(new Date(), "yyyy-MM-dd");
+  }
+}
+
+async function applyWiltingCheck(
+  userId: string,
+  db: ReturnType<typeof createServerClient>
+) {
+  const { data: garden } = await db
+    .from("gardens")
+    .select("last_completed_date, wilting")
+    .eq("user_id", userId)
+    .single();
+
+  if (!garden?.last_completed_date) return;
+
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  if (garden.last_completed_date < yesterday && !garden.wilting) {
+    await db.from("gardens").update({ wilting: true }).eq("user_id", userId);
   }
 }
