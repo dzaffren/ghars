@@ -89,11 +89,18 @@ export async function POST(
   }
 
   // Insert review record
-  await db.from("word_reviews").insert({
+  const { error: reviewErr } = await db.from("word_reviews").insert({
     user_id: userId,
     user_word_id: id,
     rating,
   });
+  if (reviewErr) {
+    console.error("[words/review] word_reviews insert failed", {
+      id,
+      reviewErr,
+    });
+    // Non-fatal: SM-2 state already updated; log and continue
+  }
 
   let plantUnlocked: string | null = null;
 
