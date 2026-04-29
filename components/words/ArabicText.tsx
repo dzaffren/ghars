@@ -13,7 +13,7 @@ export default function ArabicText({
   className = "",
   onWordTap,
 }: Props) {
-  const tokens = text.split(" ");
+  const tokens = text.split(/\s+/).filter(Boolean);
 
   return (
     <p className={`arabic-text ${className}`}>

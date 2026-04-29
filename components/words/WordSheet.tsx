@@ -43,29 +43,33 @@ export default function WordSheet({
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset on close so next open starts fresh
       setData(null);
       setError(false);
       setAddState("idle");
+      setLoading(false);
       return;
     }
+    const controller = new AbortController();
     setLoading(true);
     setError(false);
     fetch(
-      `/api/words/lookup?verse_key=${encodeURIComponent(verseKey)}&position=${position}`
+      `/api/words/lookup?verse_key=${encodeURIComponent(verseKey)}&position=${position}`,
+      { signal: controller.signal }
     )
       .then((r) => {
         if (!r.ok) throw new Error("lookup failed");
-        return r.json() as Promise<LookupResult>;
+        return r.json();
       })
       .then((d) => {
         setData(d);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if ((err as DOMException).name === "AbortError") return;
         setError(true);
         setLoading(false);
       });
+    return () => controller.abort();
   }, [isOpen, verseKey, position]);
 
   async function handleAdd() {
@@ -125,7 +129,7 @@ export default function WordSheet({
             exit={{ y: "100%" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <div className="w-full max-w-md bg-white rounded-t-2xl shadow-xl pb-safe">
+            <div className="w-full max-w-md bg-white rounded-t-2xl shadow-xl pb-8">
               {/* Handle bar */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-[var(--green-fog,#c8d8c0)]" />

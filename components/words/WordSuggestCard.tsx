@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2 } from "lucide-react";
@@ -29,13 +29,19 @@ export default function WordSuggestCard({
   onAdded,
 }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   async function handleAddAll() {
     setPhase("loading");
-    let added = 0;
-    for (const s of suggestions) {
-      try {
-        const res = await fetch("/api/words", {
+    const results = await Promise.allSettled(
+      suggestions.map((s) =>
+        fetch("/api/words", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -44,15 +50,16 @@ export default function WordSuggestCard({
             arabic: s.arabic,
             transliteration: s.transliteration,
             meaning: s.meaning,
+            root: null,
           }),
-        });
-        if (res.ok) added++;
-      } catch {
-        // best-effort — count what succeeded
-      }
-    }
+        }).then((r) => {
+          if (!r.ok) throw new Error("add failed");
+        })
+      )
+    );
+    const added = results.filter((r) => r.status === "fulfilled").length;
     setPhase("success");
-    setTimeout(() => onAdded(added), 900);
+    timerRef.current = setTimeout(() => onAdded(added), 900);
   }
 
   return (

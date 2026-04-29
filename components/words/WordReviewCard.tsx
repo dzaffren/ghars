@@ -86,6 +86,13 @@ export default function WordReviewCard({
       onClick={handleFlip}
       role="button"
       aria-label={flipped ? "Word details" : "Tap to reveal meaning"}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (!flipped) setFlipped(true);
+        }
+      }}
     >
       <div className="p-6 flex flex-col items-center gap-3 min-h-[220px] justify-center">
         <AnimatePresence mode="wait">
