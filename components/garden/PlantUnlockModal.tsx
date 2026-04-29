@@ -60,7 +60,7 @@ export default function PlantUnlockModal({ species, onClose, isOpen }: Props) {
 
             {/* Title */}
             <h2 className="text-center text-2xl font-bold text-gray-900 mb-1">
-              {capitalize(species)} Tree Unlocked!
+              {capitalize(species)}
             </h2>
             <p className="text-center text-gray-600 mb-5">
               You&apos;ve unlocked the {capitalize(species)} tree!
