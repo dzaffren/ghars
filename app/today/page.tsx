@@ -4,6 +4,7 @@ import { getOrCreateTodaysMission, getLocalDate } from "@/lib/mission/generate";
 import { createServerClient } from "@/lib/supabase/server";
 import { fetchVerseWords, type VerseWord } from "@/lib/qf/content-client";
 import { getWeeklyTheme, getISOWeek } from "@/lib/mission/weekly-theme";
+import { seedStarterWords } from "@/lib/words/seed";
 import type { CirclePreview } from "@/components/dashboard/CirclesWidget";
 import type { JournalEntryPreview } from "@/components/dashboard/JournalWidget";
 import TodayClient from "./TodayClient";
@@ -28,6 +29,17 @@ export default async function TodayPage() {
     .single();
 
   if (!user?.focus_areas?.length) redirect("/onboarding");
+
+  // Backfill: users onboarded before the starter-word seed shipped start
+  // with an empty deck and never see a review card until they accept a
+  // suggestion post-reflection. Seed once if their deck is empty.
+  const { count: existingWordCount } = await db
+    .from("user_words")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", uid);
+  if ((existingWordCount ?? 0) === 0) {
+    await seedStarterWords(db, uid);
+  }
 
   let mission: Awaited<ReturnType<typeof getOrCreateTodaysMission>> | null =
     null;

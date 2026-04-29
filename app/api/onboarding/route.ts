@@ -4,6 +4,7 @@ import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { createDailyReflectionGoal } from "@/lib/qf/user-client";
 import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
+import { seedStarterWords } from "@/lib/words/seed";
 
 export async function POST(req: NextRequest) {
   const session = await getRequiredSession();
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
       ...(goalId ? { qf_goal_id: goalId } : {}),
     })
     .eq("id", session.userId);
+
+  await seedStarterWords(db, session.userId!);
 
   logEvent("onboarding_completed", { userId: session.userId });
   return NextResponse.json({ ok: true });

@@ -6,6 +6,8 @@ import AppHeader from "@/components/AppHeader";
 import { getStreaks } from "@/lib/qf/user-client";
 import { getValidQfAccessToken } from "@/lib/auth/qf-oauth";
 
+export const dynamic = "force-dynamic";
+
 // Build the last N days as YYYY-MM-DD strings (newest last for calendar order)
 function buildDateRange(days: number): string[] {
   const result: string[] = [];
