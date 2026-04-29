@@ -52,10 +52,14 @@ export default async function TodayPage() {
     { data: circleMemberships },
     { data: latestReflection },
     { data: heatmapMissions },
+    { data: dueWords },
+    { data: gardenPlants },
   ] = await Promise.all([
     db
       .from("gardens")
-      .select("growth_points, current_streak, longest_streak, wilting")
+      .select(
+        "growth_points, current_streak, longest_streak, wilting, known_word_count, next_unlock_threshold"
+      )
       .eq("user_id", uid)
       .single(),
     mission
@@ -94,6 +98,19 @@ export default async function TodayPage() {
       .select("local_date, reflections(llm_verdict)")
       .eq("user_id", uid)
       .gte("local_date", from14),
+    db
+      .from("user_words")
+      .select(
+        "id, arabic, transliteration, meaning, root, interval_days, ease_factor, repetitions, due_at, status, audio_url"
+      )
+      .eq("user_id", uid)
+      .lte("due_at", new Date().toISOString())
+      .order("due_at", { ascending: true })
+      .limit(5),
+    db
+      .from("garden_plants")
+      .select("species, stage, words_toward_next_stage, unlocked_at")
+      .eq("user_id", uid),
   ]);
 
   const reflection = reflectionResult.data;
@@ -192,6 +209,10 @@ export default async function TodayPage() {
       journalEntry={journalEntry}
       completedDates14={completedDates}
       localDate={localDate}
+      dueWords={dueWords ?? []}
+      gardenPlants={gardenPlants ?? []}
+      knownWordCount={garden?.known_word_count ?? 0}
+      nextUnlockThreshold={garden?.next_unlock_threshold ?? 10}
     />
   );
 }

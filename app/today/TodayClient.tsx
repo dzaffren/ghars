@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import dynamic from "next/dynamic";
 import {
   Flame,
   Bookmark,
@@ -30,13 +29,13 @@ import JournalWidget, {
 } from "@/components/dashboard/JournalWidget";
 import ExploreWidget from "@/components/dashboard/ExploreWidget";
 import HeatmapStripWidget from "@/components/dashboard/HeatmapStripWidget";
+import WordReviewCard from "@/components/words/WordReviewCard";
+import WordSuggestCard from "@/components/words/WordSuggestCard";
+import PlantUnlockModal from "@/components/garden/PlantUnlockModal";
+import GardenGrove from "@/components/garden/GardenGrove";
 import { getStageProgress } from "@/lib/garden/stages";
-import type { TreeState } from "@/components/GardenTree";
 import type { VerseWord } from "@/lib/qf/content-client";
-
-const GardenTree = dynamic(() => import("@/components/GardenTree"), {
-  ssr: false,
-});
+import type { Species } from "@/lib/words/species";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -65,6 +64,27 @@ interface TasbihData {
   completed: boolean;
 }
 
+interface DueWord {
+  id: string;
+  arabic: string;
+  transliteration: string;
+  meaning: string;
+  root: string | null;
+  interval_days: number;
+  ease_factor: number;
+  repetitions: number;
+  due_at: string;
+  status: "learning" | "known" | "mature";
+  audio_url: string | null;
+}
+
+interface GardenPlantData {
+  species: "olive" | "palm" | "fig" | "pomegranate";
+  stage: 1 | 2 | 3 | 4 | 5;
+  words_toward_next_stage: number;
+  unlocked_at: string;
+}
+
 interface Props {
   mission: Mission | null;
   garden: Garden;
@@ -77,6 +97,10 @@ interface Props {
   journalEntry: JournalEntryPreview | null;
   completedDates14: string[];
   localDate: string;
+  dueWords: DueWord[];
+  gardenPlants: GardenPlantData[];
+  knownWordCount: number;
+  nextUnlockThreshold: number;
 }
 
 // ── Local helpers ─────────────────────────────────────────────────
@@ -159,6 +183,10 @@ export default function TodayClient({
   journalEntry,
   completedDates14,
   localDate,
+  dueWords,
+  gardenPlants,
+  knownWordCount,
+  nextUnlockThreshold,
 }: Props) {
   const router = useRouter();
   const [garden, setGarden] = useState<Garden>(initialGarden);
@@ -170,8 +198,25 @@ export default function TodayClient({
   >("idle");
   const [celebrationActive, setCelebrationActive] = useState(false);
   const [nextStep, setNextStep] = useState<string | null>(null);
+  const [pendingReviews, setPendingReviews] = useState<DueWord[]>(dueWords);
+  const [currentReviewIdx, setCurrentReviewIdx] = useState(0);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [showWordSuggest, setShowWordSuggest] = useState(false);
+  const [suggestedWords, setSuggestedWords] = useState<
+    Array<{
+      position: number;
+      arabic: string;
+      transliteration: string;
+      meaning: string;
+      reason: string;
+    }>
+  >([]);
+  const [unlockedSpecies, setUnlockedSpecies] = useState<Species | null>(null);
+  const [localGardenPlants, setLocalGardenPlants] =
+    useState<GardenPlantData[]>(gardenPlants);
+  const [localKnownCount, setLocalKnownCount] = useState(knownWordCount);
 
-  const treeState: TreeState = {
+  const treeState = {
     growthPoints: garden.growth_points,
     currentStreak: garden.current_streak,
     wilting: garden.wilting,
@@ -187,6 +232,44 @@ export default function TodayClient({
     growthPoints: garden.growth_points,
     nextThreshold,
   };
+
+  async function handleWordRated(
+    wordId: string,
+    rating: "again" | "hard" | "good" | "easy"
+  ) {
+    setReviewSubmitting(true);
+    try {
+      const res = await fetch(`/api/words/${wordId}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      const data = await res.json();
+
+      if (data.plantUnlocked) {
+        setUnlockedSpecies(data.plantUnlocked as Species);
+        setLocalGardenPlants((prev) => [
+          ...prev,
+          {
+            species: data.plantUnlocked,
+            stage: 1,
+            words_toward_next_stage: 0,
+            unlocked_at: new Date().toISOString(),
+          },
+        ]);
+      }
+      if (data.becameMature) {
+        setLocalKnownCount((c) => c + 1);
+      }
+
+      // Advance to next review card
+      setCurrentReviewIdx((i) => i + 1);
+    } catch {
+      // ignore
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
 
   function handleAccepted(result: {
     growthPoints: number;
@@ -206,6 +289,27 @@ export default function TodayClient({
       prev.includes(localDate) ? prev : [...prev, localDate]
     );
     setTimeout(() => setCelebrationActive(false), 2000);
+
+    // Fetch word suggestions for this verse
+    if (mission) {
+      fetch("/api/words/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verse_key: mission.verse_key,
+          verse_arabic: mission.verse_arabic,
+          verse_translation: mission.verse_translation,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.suggestions?.length) {
+            setSuggestedWords(data.suggestions);
+            setShowWordSuggest(true);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   const firstName = displayName ? displayName.split(" ")[0] : "";
@@ -264,6 +368,17 @@ export default function TodayClient({
             Desktop: 3-col grid [greeting | plant | streak] + progress bar below
         ═══════════════════════════════════════════════════════ */}
 
+        {/* Word review card — shown when there are due words */}
+        {pendingReviews[currentReviewIdx] && (
+          <div className="mx-auto w-full max-w-sm">
+            <WordReviewCard
+              word={pendingReviews[currentReviewIdx]}
+              onRated={handleWordRated}
+              isSubmitting={reviewSubmitting}
+            />
+          </div>
+        )}
+
         {/* ── Mobile hero ── */}
         <section className="md:hidden space-y-3">
           <div className="flex items-start justify-between">
@@ -282,11 +397,19 @@ export default function TodayClient({
             <StreakPill streak={garden.current_streak} />
           </div>
 
-          <div className="relative w-full flex items-center justify-center">
-            <GardenTree
-              state={treeState}
+          <div className="relative w-full overflow-x-auto">
+            <GardenGrove
+              gardenState={treeState}
+              plants={localGardenPlants.map((p) => ({
+                species: p.species,
+                stage: p.stage as 1 | 2 | 3 | 4 | 5,
+                wordsTowardNextStage: p.words_toward_next_stage,
+                unlocked: true,
+              }))}
+              lockedCount={Math.max(0, 4 - localGardenPlants.length)}
               isVerified={celebrationActive}
-              size={200}
+              knownWordCount={localKnownCount}
+              nextUnlockThreshold={nextUnlockThreshold}
             />
             <AnimatePresence>
               {celebrationActive && (
@@ -316,12 +439,20 @@ export default function TodayClient({
               )}
             </div>
 
-            {/* Center: plant (300px on desktop) */}
-            <div className="relative flex justify-center">
-              <GardenTree
-                state={treeState}
+            {/* Center: grove */}
+            <div className="relative flex justify-center overflow-x-auto">
+              <GardenGrove
+                gardenState={treeState}
+                plants={localGardenPlants.map((p) => ({
+                  species: p.species,
+                  stage: p.stage as 1 | 2 | 3 | 4 | 5,
+                  wordsTowardNextStage: p.words_toward_next_stage,
+                  unlocked: true,
+                }))}
+                lockedCount={Math.max(0, 4 - localGardenPlants.length)}
                 isVerified={celebrationActive}
-                size={300}
+                knownWordCount={localKnownCount}
+                nextUnlockThreshold={nextUnlockThreshold}
               />
               <AnimatePresence>
                 {celebrationActive && (
@@ -501,6 +632,38 @@ export default function TodayClient({
           </a>
         </footer>
       </main>
+
+      {/* Word suggestions after reflection */}
+      <AnimatePresence>
+        {showWordSuggest && suggestedWords.length > 0 && (
+          <motion.div
+            key="word-suggest"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-x-0 bottom-20 z-40 px-4"
+          >
+            <WordSuggestCard
+              suggestions={suggestedWords}
+              verseKey={mission?.verse_key ?? ""}
+              onDismiss={() => setShowWordSuggest(false)}
+              onAdded={(count) => {
+                setShowWordSuggest(false);
+                setLocalKnownCount((c) => c + count);
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Plant unlock celebration */}
+      {unlockedSpecies && (
+        <PlantUnlockModal
+          species={unlockedSpecies}
+          isOpen={!!unlockedSpecies}
+          onClose={() => setUnlockedSpecies(null)}
+        />
+      )}
     </div>
   );
 }

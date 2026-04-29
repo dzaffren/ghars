@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import AppHeader from "@/components/AppHeader";
+import ArabicText from "@/components/words/ArabicText";
 import { ChevronLeft, Info } from "lucide-react";
 
 function formatDate(dateStr: string) {
@@ -112,9 +113,11 @@ export default async function ReflectionDetailPage({
         <div className="rounded-2xl bg-gradient-to-br from-[#1a3a2a] via-[#1f4434] to-[#26563f] px-5 py-5 text-white space-y-3">
           <p className="text-[11px] opacity-50">Verse {mission.verse_key}</p>
           {mission.verse_arabic && (
-            <p className="arabic-text text-right leading-loose">
-              {mission.verse_arabic}
-            </p>
+            <ArabicText
+              text={mission.verse_arabic}
+              verseKey={mission.verse_key}
+              className="text-right leading-loose"
+            />
           )}
           <p className="text-sm leading-relaxed opacity-90">
             {mission.verse_translation}

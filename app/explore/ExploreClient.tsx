@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { Search, Loader2 } from "lucide-react";
+import ArabicText from "@/components/words/ArabicText";
+import WordSheet from "@/components/words/WordSheet";
 import type { SearchResult } from "@/lib/qf/semantic-search";
 
 const SUGGESTIONS = [
@@ -20,6 +22,10 @@ export default function ExploreClient() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [wordSheet, setWordSheet] = useState<{
+    verseKey: string;
+    position: number;
+  } | null>(null);
 
   async function search(q: string) {
     if (!q.trim() || q.length < 2) {
@@ -106,9 +112,16 @@ export default function ExploreClient() {
               >
                 <div className="bg-gradient-to-br from-[#1a3a2a] to-[#26563f] px-4 py-3 text-white space-y-2">
                   <p className="text-[11px] opacity-50">{r.verseKey}</p>
-                  <p className="arabic-text text-right leading-loose text-base">
-                    {r.arabic}
-                  </p>
+                  <div onClick={(e) => e.preventDefault()}>
+                    <ArabicText
+                      text={r.arabic}
+                      verseKey={r.verseKey}
+                      className="text-right leading-loose text-base"
+                      onWordTap={(vk, pos) => {
+                        setWordSheet({ verseKey: vk, position: pos });
+                      }}
+                    />
+                  </div>
                   <p className="text-xs leading-relaxed opacity-85">
                     {r.translation}
                   </p>
@@ -122,6 +135,13 @@ export default function ExploreClient() {
             );
           })}
       </div>
+
+      <WordSheet
+        verseKey={wordSheet?.verseKey ?? ""}
+        position={wordSheet?.position ?? 1}
+        isOpen={!!wordSheet}
+        onClose={() => setWordSheet(null)}
+      />
     </div>
   );
 }

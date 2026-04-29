@@ -10,6 +10,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import AudioPlayer from "@/components/AudioPlayer";
+import ArabicText from "@/components/words/ArabicText";
+import WordSheet from "@/components/words/WordSheet";
 import type { ChapterVerse } from "@/lib/qf/content-client";
 
 type ViewMode = "both" | "arabic" | "translation";
@@ -46,6 +48,10 @@ export default function SurahClient({
   const [pendingBookmark, setPendingBookmark] = useState<Set<string>>(
     new Set()
   );
+  const [wordSheet, setWordSheet] = useState<{
+    verseKey: string;
+    position: number;
+  } | null>(null);
 
   // Scroll to the highlighted verse on mount
   useEffect(() => {
@@ -241,9 +247,14 @@ export default function SurahClient({
                   {verse.verse_number}
                 </span>
                 {view !== "translation" && (
-                  <p className="arabic-text text-right leading-loose flex-1">
-                    {verse.text_uthmani}
-                  </p>
+                  <ArabicText
+                    text={verse.text_uthmani}
+                    verseKey={verse.verse_key}
+                    className="text-right leading-loose flex-1"
+                    onWordTap={(vk, pos) =>
+                      setWordSheet({ verseKey: vk, position: pos })
+                    }
+                  />
                 )}
                 <button
                   onClick={() => handleBookmark(verse.verse_key)}
@@ -308,6 +319,13 @@ export default function SurahClient({
           );
         })}
       </div>
+
+      <WordSheet
+        verseKey={wordSheet?.verseKey ?? ""}
+        position={wordSheet?.position ?? 1}
+        isOpen={!!wordSheet}
+        onClose={() => setWordSheet(null)}
+      />
     </main>
   );
 }

@@ -1,3 +1,7 @@
+// Note: WordSheet wiring is skipped here because VerseWord does not carry a
+// verse_key field — tapping to open WordSheet requires a verse_key. If/when
+// VerseWord is extended with verse_key, convert this to "use client" and wire
+// WordSheet similarly to SurahClient.
 import DashboardCard from "./DashboardCard";
 import type { VerseWord } from "@/lib/qf/content-client";
 
