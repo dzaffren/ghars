@@ -134,6 +134,17 @@ describe("applyReview – status transitions", () => {
     expect(result.becameMature).toBe(false);
   });
 
+  it("becameMature is false when card is already mature", () => {
+    const state: SM2State = {
+      intervalDays: 30,
+      easeFactor: 2.5,
+      repetitions: 5,
+    };
+    const result = applyReview(state, "good", "mature");
+    expect(result.becameMature).toBe(false);
+    expect(result.status).toBe("mature");
+  });
+
   it("not mature if rep>=3 but interval<21", () => {
     // rep=2, interval=1 → good gives rep=3, interval=round(1*2.5)=3 → known, not mature
     const state: SM2State = {

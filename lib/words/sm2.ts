@@ -23,7 +23,11 @@ function deriveStatus(
   return "learning";
 }
 
-export function applyReview(current: SM2State, rating: Rating): SM2Result {
+export function applyReview(
+  current: SM2State,
+  rating: Rating,
+  previousStatus: "learning" | "known" | "mature" = "learning"
+): SM2Result {
   let { intervalDays, easeFactor, repetitions } = current;
 
   switch (rating) {
@@ -34,6 +38,8 @@ export function applyReview(current: SM2State, rating: Rating): SM2Result {
       break;
     }
     case "hard": {
+      // Hard = recalled with difficulty; doesn't advance repetitions toward mature.
+      // intervalDays still grows so the card isn't shown immediately again.
       intervalDays = Math.round(intervalDays * 1.2);
       easeFactor = Math.max(EASE_FLOOR, easeFactor - 0.15);
       // repetitions unchanged
@@ -70,6 +76,6 @@ export function applyReview(current: SM2State, rating: Rating): SM2Result {
     repetitions,
     dueAt,
     status,
-    becameMature: status === "mature",
+    becameMature: status === "mature" && previousStatus !== "mature",
   };
 }

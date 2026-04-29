@@ -57,7 +57,7 @@ create table garden_plants (
 -- ── 4. gardens extension ─────────────────────────────────────────────────────
 
 alter table gardens add column if not exists known_word_count   int not null default 0;
-alter table gardens add column if not exists next_unlock_at     int not null default 10;
+alter table gardens add column if not exists next_unlock_threshold int not null default 10;
 
 -- ── Row Level Security ───────────────────────────────────────────────────────
 
