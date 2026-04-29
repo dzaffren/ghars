@@ -10,3 +10,17 @@ export function getSpeciesForRoot(root: string | null): Species | null {
 }
 
 export const ALL_SPECIES: Species[] = ["olive", "palm", "fig", "pomegranate"];
+
+export const MILESTONE_SPECIES: Record<number, Species> = {
+  10: "olive",
+  25: "palm",
+  50: "fig",
+  100: "pomegranate",
+};
+
+export const NEXT_THRESHOLD: Record<number, number> = {
+  10: 25,
+  25: 50,
+  50: 100,
+  100: 999,
+};

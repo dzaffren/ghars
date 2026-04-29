@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       root: root ?? null,
       audio_url: audio_url ?? null,
       status: "learning",
-      interval_days: 0,
+      interval_days: 1,
       ease_factor: 2.5,
       repetitions: 0,
       due_at: now,
@@ -71,13 +71,20 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     if (error.code === "23505") {
-      // Duplicate — fetch existing row
-      const { data: existing, error: fetchError } = await db
+      // Duplicate — fetch existing row, matching on the same dedup key
+      const query = db
         .from("user_words")
         .select("*")
         .eq("user_id", userId!)
-        .eq("arabic", arabic)
-        .single();
+        .eq("arabic", arabic);
+
+      if (root) {
+        query.eq("root", root);
+      } else {
+        query.is("root", null);
+      }
+
+      const { data: existing, error: fetchError } = await query.single();
 
       if (fetchError || !existing) {
         return NextResponse.json(

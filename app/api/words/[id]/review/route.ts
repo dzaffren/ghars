@@ -2,20 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { applyReview, type Rating, type SM2State } from "@/lib/words/sm2";
-
-const MILESTONES: Record<number, string> = {
-  10: "olive",
-  25: "palm",
-  50: "fig",
-  100: "pomegranate",
-};
-
-const NEXT_THRESHOLD: Record<number, number> = {
-  10: 25,
-  25: 50,
-  50: 100,
-  100: 999,
-};
+import { MILESTONE_SPECIES, NEXT_THRESHOLD } from "@/lib/words/species";
 
 export async function POST(
   req: NextRequest,
@@ -105,36 +92,38 @@ export async function POST(
   let plantUnlocked: string | null = null;
 
   if (result.becameMature) {
-    // Increment known_word_count on the garden
-    const { data: garden } = await db
-      .from("gardens")
-      .select("known_word_count, next_unlock_threshold")
-      .eq("user_id", userId)
-      .single();
+    // Atomic increment via Postgres function
+    const { data: gardenRow, error: gardenErr } = await db.rpc(
+      "increment_known_word_count",
+      { p_user_id: userId }
+    );
+    if (gardenErr || !gardenRow?.[0]) {
+      console.error("[words/review] garden increment failed", {
+        userId,
+        gardenErr,
+      });
+    } else {
+      const { known_word_count: newCount, next_unlock_threshold: threshold } =
+        gardenRow[0];
 
-    const newCount = (garden?.known_word_count ?? 0) + 1;
-    const threshold = garden?.next_unlock_threshold ?? 10;
-
-    await db
-      .from("gardens")
-      .update({ known_word_count: newCount })
-      .eq("user_id", userId);
-
-    // Check if we crossed a milestone
-    if (newCount >= threshold) {
-      const species = MILESTONES[threshold];
-
-      if (species) {
-        await db.from("garden_plants").upsert(
-          {
-            user_id: userId,
-            species,
-            unlocked_at: now,
-          },
-          { onConflict: "user_id,species", ignoreDuplicates: false }
-        );
-
+      if (newCount >= threshold && threshold in MILESTONE_SPECIES) {
+        const species = MILESTONE_SPECIES[threshold];
         const nextThreshold = NEXT_THRESHOLD[threshold] ?? 999;
+
+        const { error: plantErr } = await db
+          .from("garden_plants")
+          .upsert(
+            { user_id: userId, species, stage: 1, words_toward_next_stage: 0 },
+            { onConflict: "user_id,species" }
+          );
+        if (plantErr) {
+          console.error("[words/review] garden_plants upsert failed", {
+            userId,
+            species,
+            plantErr,
+          });
+        }
+
         await db
           .from("gardens")
           .update({ next_unlock_threshold: nextThreshold })
