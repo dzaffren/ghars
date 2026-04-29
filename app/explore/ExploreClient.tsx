@@ -112,7 +112,7 @@ export default function ExploreClient() {
               >
                 <div className="bg-gradient-to-br from-[#1a3a2a] to-[#26563f] px-4 py-3 text-white space-y-2">
                   <p className="text-[11px] opacity-50">{r.verseKey}</p>
-                  <div onClick={(e) => e.preventDefault()}>
+                  <div onClick={(e) => e.stopPropagation()}>
                     <ArabicText
                       text={r.arabic}
                       verseKey={r.verseKey}

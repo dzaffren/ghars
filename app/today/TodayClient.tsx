@@ -31,6 +31,8 @@ import ExploreWidget from "@/components/dashboard/ExploreWidget";
 import HeatmapStripWidget from "@/components/dashboard/HeatmapStripWidget";
 import WordReviewCard from "@/components/words/WordReviewCard";
 import WordSuggestCard from "@/components/words/WordSuggestCard";
+import ArabicText from "@/components/words/ArabicText";
+import WordSheet from "@/components/words/WordSheet";
 import PlantUnlockModal from "@/components/garden/PlantUnlockModal";
 import GardenGrove from "@/components/garden/GardenGrove";
 import { getStageProgress } from "@/lib/garden/stages";
@@ -215,6 +217,10 @@ export default function TodayClient({
   const [localGardenPlants, setLocalGardenPlants] =
     useState<GardenPlantData[]>(gardenPlants);
   const [localKnownCount, setLocalKnownCount] = useState(knownWordCount);
+  const [wordSheetWord, setWordSheetWord] = useState<{
+    verseKey: string;
+    position: number;
+  } | null>(null);
 
   const treeState = {
     growthPoints: garden.growth_points,
@@ -244,6 +250,7 @@ export default function TodayClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating }),
       });
+      if (!res.ok) throw new Error(`review failed: ${res.status}`);
       const data = await res.json();
 
       if (data.plantUnlocked) {
@@ -500,9 +507,14 @@ export default function TodayClient({
                     </Badge>
                   )}
                 </div>
-                <p className="arabic-text text-right leading-loose">
-                  {mission.verse_arabic}
-                </p>
+                <ArabicText
+                  text={mission.verse_arabic}
+                  verseKey={mission.verse_key}
+                  className="text-right leading-loose"
+                  onWordTap={(vk, pos) =>
+                    setWordSheetWord({ verseKey: vk, position: pos })
+                  }
+                />
                 <p className="text-sm leading-relaxed opacity-90">
                   {mission.verse_translation}
                 </p>
@@ -664,6 +676,13 @@ export default function TodayClient({
           onClose={() => setUnlockedSpecies(null)}
         />
       )}
+
+      <WordSheet
+        verseKey={wordSheetWord?.verseKey ?? ""}
+        position={wordSheetWord?.position ?? 1}
+        isOpen={!!wordSheetWord}
+        onClose={() => setWordSheetWord(null)}
+      />
     </div>
   );
 }
