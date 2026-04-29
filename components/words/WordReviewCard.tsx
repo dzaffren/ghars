@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import AudioPlayer from "@/components/AudioPlayer";
 
 interface WordProp {
@@ -45,9 +44,9 @@ function nextInterval(
 }
 
 const STATUS_BADGE: Record<WordProp["status"], string> = {
-  learning: "amber",
-  known: "secondary",
-  mature: "secondary",
+  learning: "bg-amber-100 text-amber-700 border-amber-200",
+  known: "bg-green-100 text-green-700 border-green-200",
+  mature: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
 const STATUS_LABEL: Record<WordProp["status"], string> = {
@@ -130,10 +129,6 @@ export default function WordReviewCard({
               className="flex flex-col items-center gap-3 w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="arabic-text text-center">{word.arabic}</p>
-              <p className="text-sm text-[var(--ink-soft)]">
-                {word.transliteration}
-              </p>
               <p className="text-base font-medium text-center">
                 {word.meaning}
               </p>
@@ -142,16 +137,11 @@ export default function WordReviewCard({
                   Root: {word.root}
                 </p>
               )}
-              <Badge
-                variant={STATUS_BADGE[word.status] as "amber" | "secondary"}
-                className={
-                  word.status === "mature"
-                    ? "bg-emerald-100 text-emerald-800 border-transparent"
-                    : ""
-                }
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[word.status]}`}
               >
                 {STATUS_LABEL[word.status]}
-              </Badge>
+              </span>
               {word.audio_url && (
                 <AudioPlayer url={word.audio_url} label="Listen" />
               )}
