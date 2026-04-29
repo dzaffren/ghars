@@ -10,6 +10,9 @@ export async function getLLMProvider(): Promise<LLMProvider> {
   if (which === "ollama") {
     const { OllamaLLM } = await import("./ollama");
     _provider = new OllamaLLM();
+  } else if (!process.env.ANTHROPIC_API_KEY) {
+    const { StubLLM } = await import("./stub");
+    _provider = new StubLLM();
   } else {
     const { AnthropicLLM } = await import("./anthropic");
     _provider = new AnthropicLLM();
@@ -18,4 +21,8 @@ export async function getLLMProvider(): Promise<LLMProvider> {
   return _provider;
 }
 
-export type { LLMProvider, PickMissionResult, JudgeReflectionResult } from "./types";
+export type {
+  LLMProvider,
+  PickMissionResult,
+  JudgeReflectionResult,
+} from "./types";
