@@ -141,6 +141,8 @@ export interface VerseWord {
   text_uthmani: string;
   translation: string;
   transliteration: string;
+  root_id?: string | null;
+  lemma_id?: string | null;
 }
 
 // Fetches the word list for a verse. QF includes words when word_fields is set.
@@ -149,7 +151,7 @@ export async function fetchVerseWords(verseKey: string): Promise<VerseWord[]> {
   try {
     const data = await qfFetch(`/verses/by_key/${verseKey}`, {
       words: "true",
-      word_fields: "text_uthmani,translation,transliteration",
+      word_fields: "text_uthmani,translation,transliteration,root_id,lemma_id",
       fields: "text_uthmani",
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +162,8 @@ export async function fetchVerseWords(verseKey: string): Promise<VerseWord[]> {
         text_uthmani: w.text_uthmani ?? w.text ?? "",
         translation: w.translation?.text ?? "",
         transliteration: w.transliteration?.text ?? "",
+        root_id: w.root_id ?? null,
+        lemma_id: w.lemma_id ?? null,
       }))
       .filter((w) => w.text_uthmani && w.translation);
   } catch {

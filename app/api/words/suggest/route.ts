@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { fetchVerseWords } from "@/lib/qf/content-client";
+import { getLLMProvider } from "@/lib/llm";
+import { heuristicSuggest } from "@/lib/words/suggest";
 
 export async function POST(req: NextRequest) {
   const session = await getRequiredSession();
@@ -39,22 +41,44 @@ export async function POST(req: NextRequest) {
     root: w.root as string | null,
   }));
 
-  // Heuristic fallback: return first 2 non-empty words from the verse
+  const words = await fetchVerseWords(verse_key);
+
+  let suggestions: Array<{
+    position: number;
+    arabic: string;
+    transliteration: string;
+    meaning: string;
+    reason: string;
+  }>;
+
   try {
-    const words = await fetchVerseWords(verse_key);
-    const suggestions = words.slice(0, 2).map((w, i) => ({
-      position: i + 1,
-      arabic: w.text_uthmani,
-      transliteration: w.transliteration,
-      meaning: w.translation,
-      reason: "Suggested word from this verse",
-    }));
+    const llm = await getLLMProvider();
+    const llmResult = await llm.suggestWords({
+      verseKey: verse_key,
+      verseArabic: verse_arabic,
+      verseTranslation: verse_translation,
+      knownWords,
+    });
 
-    // knownWords is fetched above and would be passed to llm.suggestWords in Task 3
-    void knownWords;
+    // Map LLM position suggestions to full word data
+    suggestions = llmResult.suggestions
+      .map((s) => {
+        const word = words[s.position - 1];
+        if (!word) return null;
+        return {
+          position: s.position,
+          arabic: word.text_uthmani,
+          transliteration: word.transliteration,
+          meaning: word.translation,
+          reason: s.reason,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
 
-    return NextResponse.json({ suggestions });
+    if (suggestions.length === 0) throw new Error("no valid positions");
   } catch {
-    return NextResponse.json({ suggestions: [] });
+    suggestions = heuristicSuggest(words);
   }
+
+  return NextResponse.json({ suggestions });
 }

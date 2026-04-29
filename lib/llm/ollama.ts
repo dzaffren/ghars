@@ -5,12 +5,16 @@ import type {
   PickMissionResult,
   JudgeReflectionInput,
   JudgeReflectionResult,
+  SuggestWordsInput,
+  SuggestWordsResult,
 } from "./types";
 import {
   PICK_MISSION_SYSTEM,
   buildPickMissionPrompt,
   JUDGE_REFLECTION_SYSTEM,
   buildJudgeReflectionPrompt,
+  SUGGEST_WORDS_SYSTEM,
+  buildSuggestWordsPrompt,
 } from "./prompts";
 
 const ollama = new Ollama({
@@ -33,7 +37,11 @@ ${buildPickMissionPrompt(input.focusAreas, input.recentVerseKeys, input.actionab
 Respond with ONLY valid JSON in this exact format:
 {"verse_key": "X:Y", "mission_text": "...", "focus_area": "..."}`;
 
-    const response = await ollama.generate({ model: MODEL, prompt, stream: false });
+    const response = await ollama.generate({
+      model: MODEL,
+      prompt,
+      stream: false,
+    });
     const parsed = extractJSON(response.response) as {
       verse_key: string;
       mission_text: string;
@@ -56,7 +64,11 @@ ${buildJudgeReflectionPrompt(input.mission, input.verseTranslation, input.reflec
 Respond with ONLY valid JSON in this exact format:
 {"verdict": "accepted" or "soft_nudge", "feedback": "...", "depth_score": 1-5}`;
 
-    const response = await ollama.generate({ model: MODEL, prompt, stream: false });
+    const response = await ollama.generate({
+      model: MODEL,
+      prompt,
+      stream: false,
+    });
     const parsed = extractJSON(response.response) as {
       verdict: "accepted" | "soft_nudge";
       feedback: string;
@@ -66,6 +78,28 @@ Respond with ONLY valid JSON in this exact format:
       verdict: parsed.verdict,
       feedback: parsed.feedback,
       depthScore: Math.min(5, Math.max(1, Math.round(parsed.depth_score))),
+    };
+  }
+
+  async suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult> {
+    const prompt = `${SUGGEST_WORDS_SYSTEM}
+
+${buildSuggestWordsPrompt(input.verseArabic, input.verseTranslation, input.knownWords)}
+
+Respond with ONLY valid JSON in this exact format:
+{"suggestions": [{"position": 1, "reason": "..."}, {"position": 3, "reason": "..."}]}
+Return 1-2 items only.`;
+
+    const response = await ollama.generate({
+      model: MODEL,
+      prompt,
+      stream: false,
+    });
+    const parsed = extractJSON(response.response) as {
+      suggestions: Array<{ position: number; reason: string }>;
+    };
+    return {
+      suggestions: (parsed.suggestions ?? []).slice(0, 2),
     };
   }
 }

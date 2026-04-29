@@ -29,7 +29,24 @@ export interface JudgeReflectionResult {
   nextStep?: string; // one concrete suggestion for tomorrow (only on accepted)
 }
 
+export interface SuggestWordsInput {
+  verseKey: string;
+  verseArabic: string;
+  verseTranslation: string;
+  knownWords: Array<{ arabic: string; root: string | null }>;
+}
+
+export interface SuggestWordItem {
+  position: number; // 1-based word position in the verse
+  reason: string; // brief explanation of why this word is useful to learn
+}
+
+export interface SuggestWordsResult {
+  suggestions: SuggestWordItem[]; // 1-2 items
+}
+
 export interface LLMProvider {
   pickMission(input: PickMissionInput): Promise<PickMissionResult>;
   judgeReflection(input: JudgeReflectionInput): Promise<JudgeReflectionResult>;
+  suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult>;
 }

@@ -46,3 +46,28 @@ If completely unrelated or too vague, verdict=soft_nudge with a gentle one-sente
 If accepted, next_step should be one concrete suggestion drawn from what they wrote — e.g. "Tomorrow, notice how
 this same quality appears when you interact with [person/situation they mentioned]." Keep it under 2 sentences.`;
 }
+
+export const SUGGEST_WORDS_SYSTEM = `You are a Quranic Arabic vocabulary tutor. Your role is to identify 1-2 Arabic words from a verse that would be most valuable for a learner to add to their spaced-repetition deck. Choose words that:
+- Are meaningful root-words (not particles like وَ, فِي, مِن, عَلَى, أَنَّ)
+- Are not already in the learner's known-word list
+- Appear frequently in Quranic vocabulary
+- Have clear, memorable meanings that connect to the verse's message`;
+
+export function buildSuggestWordsPrompt(
+  verseArabic: string,
+  verseTranslation: string,
+  knownWords: Array<{ arabic: string; root: string | null }>
+): string {
+  const knownList =
+    knownWords.length > 0
+      ? knownWords
+          .slice(0, 50)
+          .map((w) => w.arabic)
+          .join("، ")
+      : "none yet";
+  return `Verse (Arabic): ${verseArabic}
+Verse (Translation): ${verseTranslation}
+Learner's known words (skip these): ${knownList}
+
+Identify 1-2 Arabic words from this verse that would be most valuable to add to the learner's deck. Return their 1-based position in the verse.`;
+}

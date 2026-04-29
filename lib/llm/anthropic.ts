@@ -5,12 +5,16 @@ import type {
   PickMissionResult,
   JudgeReflectionInput,
   JudgeReflectionResult,
+  SuggestWordsInput,
+  SuggestWordsResult,
 } from "./types";
 import {
   PICK_MISSION_SYSTEM,
   buildPickMissionPrompt,
   JUDGE_REFLECTION_SYSTEM,
   buildJudgeReflectionPrompt,
+  SUGGEST_WORDS_SYSTEM,
+  buildSuggestWordsPrompt,
 } from "./prompts";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -32,6 +36,38 @@ const PICK_TOOL: Anthropic.Tool = {
       },
     },
     required: ["verse_key", "mission_text", "focus_area"],
+  },
+};
+
+const SUGGEST_TOOL: Anthropic.Tool = {
+  name: "suggest_words",
+  description:
+    "Return 1-2 Arabic word positions from the verse that the learner should add to their deck",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      suggestions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            position: {
+              type: "number",
+              description: "1-based word position in the verse",
+            },
+            reason: {
+              type: "string",
+              description:
+                "Brief reason this word is worth learning (1 sentence)",
+            },
+          },
+          required: ["position", "reason"],
+        },
+        minItems: 1,
+        maxItems: 2,
+      },
+    },
+    required: ["suggestions"],
   },
 };
 
@@ -96,6 +132,43 @@ export class AnthropicLLM implements LLMProvider {
       verseKey: inp.verse_key,
       missionText: inp.mission_text,
       focusArea: inp.focus_area,
+    };
+  }
+
+  async suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult> {
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 256,
+      system: [
+        {
+          type: "text",
+          text: SUGGEST_WORDS_SYSTEM,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [
+        {
+          role: "user",
+          content: buildSuggestWordsPrompt(
+            input.verseArabic,
+            input.verseTranslation,
+            input.knownWords
+          ),
+        },
+      ],
+      tools: [SUGGEST_TOOL],
+      tool_choice: { type: "tool", name: "suggest_words" },
+    });
+
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
+      throw new Error("LLM did not return tool use");
+    }
+    const inp = toolUse.input as {
+      suggestions: Array<{ position: number; reason: string }>;
+    };
+    return {
+      suggestions: inp.suggestions.slice(0, 2),
     };
   }
 
