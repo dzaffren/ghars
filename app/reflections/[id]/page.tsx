@@ -8,8 +8,9 @@ import PendingDetailCallout from "./PendingDetailCallout";
 // MarkerReveal is authored by the parallel Task 4 agent. We import it
 // statically so the detail page renders the per-marker breakdown in
 // non-animating mode. Until the sibling branch merges, the module
-// will not resolve locally — the ts-expect-error below documents that.
-// @ts-expect-error — Task 4 introduces this component; resolves on merge.
+// will not resolve locally — @ts-ignore (not expect-error) so the
+// directive remains inert once the real component lands.
+// @ts-ignore — Task 4 introduces this component; resolves on merge.
 import MarkerReveal from "@/components/MarkerReveal";
 import { ChevronLeft } from "lucide-react";
 import type { MarkerBundle } from "@/lib/llm/types";

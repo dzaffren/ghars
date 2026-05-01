@@ -266,7 +266,7 @@ export default async function TodayPage() {
       // Task 4's TodayClient accepts todaysMarkerBundle to drive the
       // marker-reveal hydration path. Passing it now so the parallel
       // agent's merge doesn't require a follow-up here.
-      // @ts-expect-error — Task 4 adds this prop to TodayClient.
+      // @ts-ignore — Task 4 adds this prop to TodayClient.
       todaysMarkerBundle={todaysMarkerBundle}
     />
   );
