@@ -126,22 +126,6 @@ const JUDGE_TOOL: Anthropic.Tool = {
   },
 };
 
-type RawMarker = {
-  present: boolean;
-  triggering_phrase?: string;
-  coaching_prompt?: string;
-};
-
-type RawJudgeInput = {
-  markers: {
-    specific_moment: RawMarker;
-    behavioral_change: RawMarker;
-    temporal_anchor: RawMarker;
-    honest_friction: RawMarker;
-    next_step: RawMarker;
-  };
-};
-
 export class AnthropicLLM implements LLMProvider {
   async pickMission(input: PickMissionInput): Promise<PickMissionResult> {
     const response = await client.messages.create({
@@ -255,14 +239,7 @@ export class AnthropicLLM implements LLMProvider {
     if (!toolUse || toolUse.type !== "tool_use") {
       throw new Error("LLM did not return tool use");
     }
-    const inp = toolUse.input as RawJudgeInput;
-    const markers: MarkerBundle = {
-      specific_moment: inp.markers.specific_moment,
-      behavioral_change: inp.markers.behavioral_change,
-      temporal_anchor: inp.markers.temporal_anchor,
-      honest_friction: inp.markers.honest_friction,
-      next_step: inp.markers.next_step,
-    };
+    const { markers } = toolUse.input as { markers: MarkerBundle };
     // Count in code rather than trust the model — the handler's substring
     // integrity check (Task 3) may also flip markers from true→false, so
     // upstream callers should always rely on this derived value.

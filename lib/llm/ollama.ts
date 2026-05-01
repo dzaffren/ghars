@@ -1,7 +1,6 @@
 import { Ollama } from "ollama";
 import type {
   LLMProvider,
-  Marker,
   MarkerBundle,
   PickMissionInput,
   PickMissionResult,
@@ -83,21 +82,8 @@ Include "triggering_phrase" only when present=true; include "coaching_prompt" on
       prompt,
       stream: false,
     });
-    const parsed = extractJSON(response.response) as {
-      markers: {
-        specific_moment: Marker;
-        behavioral_change: Marker;
-        temporal_anchor: Marker;
-        honest_friction: Marker;
-        next_step: Marker;
-      };
-    };
-    const markers: MarkerBundle = {
-      specific_moment: parsed.markers.specific_moment,
-      behavioral_change: parsed.markers.behavioral_change,
-      temporal_anchor: parsed.markers.temporal_anchor,
-      honest_friction: parsed.markers.honest_friction,
-      next_step: parsed.markers.next_step,
+    const { markers } = extractJSON(response.response) as {
+      markers: MarkerBundle;
     };
     const markerCount = Object.values(markers).filter((m) => m.present).length;
     return { markers, markerCount };
