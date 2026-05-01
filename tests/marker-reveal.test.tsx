@@ -58,3 +58,39 @@ describe("MarkerReveal — row ordering", () => {
     }
   });
 });
+
+describe("MarkerReveal — present markers render the triggering phrase", () => {
+  it("renders the exact triggering_phrase verbatim for each present marker", () => {
+    const markers: MarkerBundle = {
+      specific_moment: {
+        present: true,
+        triggering_phrase: "At Maghrib my sister snapped at me",
+      },
+      behavioral_change: {
+        present: true,
+        triggering_phrase: "I paused, said you're right",
+      },
+      temporal_anchor: { present: true, triggering_phrase: "At Maghrib" },
+      honest_friction: {
+        present: true,
+        triggering_phrase: "It felt hard not to defend myself",
+      },
+      next_step: {
+        present: true,
+        triggering_phrase: "Tomorrow I'll just do the dishes",
+      },
+    };
+    const html = renderToStaticMarkup(
+      <MarkerReveal markers={markers} markerCount={5} animate={false} />
+    );
+
+    // Each phrase appears verbatim somewhere in the output. We don't assert
+    // on exact quote rendering (&ldquo; etc.) — only that the user can read
+    // back their own words.
+    expect(html).toContain("At Maghrib my sister snapped at me");
+    expect(html).toContain("I paused, said you&#x27;re right");
+    expect(html).toContain("At Maghrib");
+    expect(html).toContain("It felt hard not to defend myself");
+    expect(html).toContain("Tomorrow I&#x27;ll just do the dishes");
+  });
+});
