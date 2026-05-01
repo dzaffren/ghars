@@ -16,3 +16,14 @@ pnpm dlx tsx scripts/eval-judge-v2.ts
 ```
 
 Exits `0` on pass, `1` on fail. Each run issues ~30 real Anthropic calls.
+
+## `backfill-markers.ts`
+
+One-time script to re-score existing reflections against the five-marker rubric.
+Run AFTER applying migration `0010_application_rubric.sql`.
+
+```sh
+source .env.local && pnpm dlx tsx scripts/backfill-markers.ts
+```
+
+Idempotent — re-running processes only rows still at `marker_count IS NULL`.
