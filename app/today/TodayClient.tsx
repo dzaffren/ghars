@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 import AudioPlayer from "@/components/AudioPlayer";
 import ReflectionForm from "@/components/ReflectionForm";
+import MarkerReveal from "@/components/MarkerReveal";
 import MissionCelebration from "@/components/MissionCelebration";
+import type { MarkerBundle } from "@/lib/llm/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GradientCard } from "@/components/ui/gradient-card";
@@ -87,6 +89,18 @@ interface GardenPlantData {
   unlocked_at: string;
 }
 
+// Snapshot of today's already-submitted reflection, passed from the server so
+// a page reload after a same-day submission still shows the five-marker
+// breakdown (when scored) or the pending banner (when the judge was out).
+// Missing entirely when the server-side fetch has not yet been wired in —
+// the TodayClient falls back to a plain "Mission complete!" in that case.
+export interface TodaysReflectionSnapshot {
+  status: "scored" | "pending";
+  markers?: MarkerBundle;
+  markerCount?: number;
+  pendingMessage?: string;
+}
+
 interface Props {
   mission: Mission | null;
   garden: Garden;
@@ -103,6 +117,7 @@ interface Props {
   gardenPlants: GardenPlantData[];
   knownWordCount: number;
   nextUnlockThreshold: number;
+  todaysMarkerBundle?: TodaysReflectionSnapshot | null;
 }
 
 // ── Local helpers ─────────────────────────────────────────────────
@@ -189,6 +204,7 @@ export default function TodayClient({
   gardenPlants,
   knownWordCount,
   nextUnlockThreshold,
+  todaysMarkerBundle,
 }: Props) {
   const router = useRouter();
   const [garden, setGarden] = useState<Garden>(initialGarden);
@@ -199,7 +215,11 @@ export default function TodayClient({
     "idle" | "syncing" | "synced" | "failed"
   >("idle");
   const [celebrationActive, setCelebrationActive] = useState(false);
-  const [nextStep, setNextStep] = useState<string | null>(null);
+  // Last submission's rendered state. Seeded from `todaysMarkerBundle` so a
+  // reload after a same-day submission still shows the marker breakdown; the
+  // scored/pending handlers below overwrite it on a fresh submission.
+  const [lastSubmission, setLastSubmission] =
+    useState<TodaysReflectionSnapshot | null>(todaysMarkerBundle ?? null);
   const [pendingReviews, setPendingReviews] = useState<DueWord[]>(dueWords);
   const [currentReviewIdx, setCurrentReviewIdx] = useState(0);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -280,10 +300,16 @@ export default function TodayClient({
     }
   }
 
-  function handleAccepted(result: {
+  // Scored path — the judge returned a marker bundle. Grow the plant, fire
+  // the celebration, and kick off the word-suggest sidebar. The form's own
+  // MarkerReveal handles the in-form animated reveal; the completed success
+  // block re-renders the same bundle in static mode.
+  function handleScored(result: {
+    markerCount: number;
+    markers: MarkerBundle;
     growthPoints: number;
+    pointsEarned: number;
     currentStreak: number;
-    nextStep?: string;
   }) {
     setGarden((g) => ({
       ...g,
@@ -291,7 +317,11 @@ export default function TodayClient({
       current_streak: result.currentStreak,
       wilting: false,
     }));
-    setNextStep(result.nextStep ?? null);
+    setLastSubmission({
+      status: "scored",
+      markers: result.markers,
+      markerCount: result.markerCount,
+    });
     setCompleted(true);
     setCelebrationActive(true);
     setCompletedDates((prev) =>
@@ -319,6 +349,32 @@ export default function TodayClient({
         })
         .catch(() => {});
     }
+  }
+
+  // Pending path — judge outage. The reflection is saved and the plant still
+  // grows by the minimum, but we deliberately suppress the celebration: the
+  // user sees a quiet "5 markers pending" banner instead. Word suggestions
+  // are also skipped — the user will see them next time.
+  function handlePending(result: {
+    pendingMessage: string;
+    growthPoints: number;
+    pointsEarned: number;
+    currentStreak: number;
+  }) {
+    setGarden((g) => ({
+      ...g,
+      growth_points: result.growthPoints,
+      current_streak: result.currentStreak,
+      wilting: false,
+    }));
+    setLastSubmission({
+      status: "pending",
+      pendingMessage: result.pendingMessage,
+    });
+    setCompleted(true);
+    setCompletedDates((prev) =>
+      prev.includes(localDate) ? prev : [...prev, localDate]
+    );
   }
 
   const firstName = displayName ? displayName.split(" ")[0] : "";
@@ -590,29 +646,56 @@ export default function TodayClient({
                   {mission.mission_text}
                 </p>
 
-                {completed ? (
-                  <div className="rounded-xl bg-white/12 px-4 py-3 space-y-2">
+                {alreadyCompleted ? (
+                  // Reload-after-submission branch — the server rendered this
+                  // page with a pre-existing reflection. The form never mounts
+                  // here; the success block re-creates the marker breakdown
+                  // in static mode so the user sees the same summary they
+                  // saw when they originally submitted.
+                  <div className="rounded-xl bg-white/12 px-4 py-3 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check size={14} className="text-white shrink-0" />
                       <p className="text-sm font-semibold text-white">
                         Mission complete!
                       </p>
                     </div>
-                    {nextStep && (
-                      <p className="text-xs italic text-white/70 border-t border-white/15 pt-2 leading-relaxed">
-                        {nextStep}
-                      </p>
-                    )}
-                    {!nextStep && (
+                    {lastSubmission?.status === "scored" &&
+                      lastSubmission.markers &&
+                      typeof lastSubmission.markerCount === "number" && (
+                        <div className="border-t border-white/15 pt-3">
+                          <MarkerReveal
+                            markers={lastSubmission.markers}
+                            markerCount={lastSubmission.markerCount}
+                            animate={false}
+                          />
+                        </div>
+                      )}
+                    {lastSubmission?.status === "pending" &&
+                      lastSubmission.pendingMessage && (
+                        <p
+                          data-testid="pending-banner"
+                          className="text-xs text-white/75 border-t border-white/15 pt-2 leading-relaxed"
+                        >
+                          {lastSubmission.pendingMessage}
+                        </p>
+                      )}
+                    {!lastSubmission && (
                       <p className="text-xs text-white/75">
                         Come back tomorrow for a new mission.
                       </p>
                     )}
                   </div>
                 ) : (
+                  // First-visit branch — the form owns the idle → submitting →
+                  // scored|pending transitions so its MarkerReveal animation
+                  // plays in place without being interrupted by a parent
+                  // re-render. `completed` still flips to true via the
+                  // onScored/onPending handlers so the celebration, garden
+                  // update, and word-suggest sidebar all fire.
                   <ReflectionForm
                     missionId={mission.id}
-                    onAccepted={handleAccepted}
+                    onScored={handleScored}
+                    onPending={handlePending}
                   />
                 )}
               </div>
