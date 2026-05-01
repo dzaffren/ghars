@@ -46,4 +46,53 @@ describe("reflections fixture — shape", () => {
   it("contains exactly 15 samples", () => {
     expect(SAMPLES).toHaveLength(15);
   });
+
+  it("every entry has the required top-level fields as strings", () => {
+    for (const s of SAMPLES) {
+      expect(typeof s.id, `id on ${s.id}`).toBe("string");
+      expect(typeof s.mission, `mission on ${s.id}`).toBe("string");
+      expect(typeof s.verse_translation, `verse_translation on ${s.id}`).toBe(
+        "string"
+      );
+      expect(typeof s.reflection_text, `reflection_text on ${s.id}`).toBe(
+        "string"
+      );
+      expect(s.id.length, `id length on ${s.id}`).toBeGreaterThan(0);
+      expect(s.mission.length, `mission length on ${s.id}`).toBeGreaterThan(0);
+      expect(
+        s.reflection_text.length,
+        `reflection length on ${s.id}`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("every ground_truth.markers has all five keys as booleans", () => {
+    for (const s of SAMPLES) {
+      const m = s.ground_truth.markers;
+      for (const k of MARKER_KEYS) {
+        expect(typeof m[k], `${k} should be boolean on ${s.id}`).toBe(
+          "boolean"
+        );
+      }
+    }
+  });
+
+  it("every ground_truth has applied_but_inelegant boolean and notes string", () => {
+    for (const s of SAMPLES) {
+      expect(
+        typeof s.ground_truth.applied_but_inelegant,
+        `applied_but_inelegant on ${s.id}`
+      ).toBe("boolean");
+      expect(typeof s.ground_truth.notes, `notes on ${s.id}`).toBe("string");
+      expect(
+        s.ground_truth.notes.length,
+        `notes length on ${s.id}`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("all sample ids are unique", () => {
+    const ids = SAMPLES.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
