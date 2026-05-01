@@ -646,7 +646,12 @@ export default function TodayClient({
                   {mission.mission_text}
                 </p>
 
-                {completed ? (
+                {alreadyCompleted ? (
+                  // Reload-after-submission branch — the server rendered this
+                  // page with a pre-existing reflection. The form never mounts
+                  // here; the success block re-creates the marker breakdown
+                  // in static mode so the user sees the same summary they
+                  // saw when they originally submitted.
                   <div className="rounded-xl bg-white/12 px-4 py-3 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check size={14} className="text-white shrink-0" />
@@ -681,6 +686,12 @@ export default function TodayClient({
                     )}
                   </div>
                 ) : (
+                  // First-visit branch — the form owns the idle → submitting →
+                  // scored|pending transitions so its MarkerReveal animation
+                  // plays in place without being interrupted by a parent
+                  // re-render. `completed` still flips to true via the
+                  // onScored/onPending handlers so the celebration, garden
+                  // update, and word-suggest sidebar all fire.
                   <ReflectionForm
                     missionId={mission.id}
                     onScored={handleScored}
