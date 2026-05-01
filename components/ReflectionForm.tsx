@@ -6,85 +6,185 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Send } from "lucide-react";
+import MarkerReveal from "@/components/MarkerReveal";
+import type { MarkerBundle } from "@/lib/llm/types";
+
+// ReflectionForm v2 — wired to the five-marker judge.
+//
+// State machine:
+//   idle       — textarea + submit button (default)
+//   submitting — spinner, form locked
+//   pending    — judge outage; neutral banner below the submitted text
+//   scored     — happy path; inline MarkerReveal below the submitted text
+//
+// The `nudge` / `accepted` dichotomy from v1 is gone. Every reflection is
+// accepted; missing markers never block the user or trigger a retry.
+
+interface ScoredResult {
+  status: "scored";
+  markerCount: number;
+  markers: MarkerBundle;
+  growthPoints: number;
+  pointsEarned: number;
+  currentStreak: number;
+}
+
+interface PendingResult {
+  status: "pending";
+  pendingMessage: string;
+  growthPoints: number;
+  pointsEarned: number;
+  currentStreak: number;
+}
 
 interface Props {
   missionId: string;
-  onAccepted: (result: {
-    growthPoints: number;
-    currentStreak: number;
-    nextStep?: string;
-  }) => void;
+  onScored: (result: ScoredResult) => void;
+  onPending: (result: PendingResult) => void;
 }
 
-export default function ReflectionForm({ missionId, onAccepted }: Props) {
+type FormState = "idle" | "submitting" | "pending" | "scored";
+
+export default function ReflectionForm({
+  missionId,
+  onScored,
+  onPending,
+}: Props) {
   const [text, setText] = useState("");
-  const [photoPath] = useState<string | undefined>();
-  const [state, setState] = useState<
-    "idle" | "submitting" | "nudge" | "accepted"
-  >("idle");
-  const [feedback, setFeedback] = useState("");
+  const [state, setState] = useState<FormState>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [scored, setScored] = useState<ScoredResult | null>(null);
+  const [pending, setPending] = useState<PendingResult | null>(null);
 
   async function submit() {
     if (!text.trim() || state === "submitting") return;
     setState("submitting");
+    setErrorMessage("");
 
-    const res = await fetch("/api/reflection", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ missionId, reflectionText: text, photoPath }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setFeedback(data.error ?? "Something went wrong.");
-      setState("nudge");
+    let res: Response;
+    try {
+      res = await fetch("/api/reflection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ missionId, reflectionText: text }),
+      });
+    } catch {
+      // Network-level failure — no response body. Stay in idle so the user
+      // can retry with the same text.
+      setErrorMessage(
+        "We couldn't reach the server. Check your connection and try again."
+      );
+      setState("idle");
       return;
     }
 
-    setFeedback(data.feedback ?? "");
+    const data = await res.json().catch(() => ({}));
 
-    if (data.verdict === "accepted") {
-      setState("accepted");
-      onAccepted({
-        growthPoints: data.growthPoints,
-        currentStreak: data.currentStreak,
-        nextStep: data.nextStep,
-      });
-    } else {
-      setState("nudge");
+    if (!res.ok) {
+      setErrorMessage(
+        typeof data.error === "string"
+          ? data.error
+          : "Something went wrong. Try again."
+      );
+      setState("idle");
+      return;
     }
+
+    // Successful response is either 'scored' or 'pending'. The orchestrator
+    // never returns anything else on a 2xx; fall through to scored for
+    // forward-compat (new status values would still grow the plant).
+    if (data.status === "pending") {
+      const result: PendingResult = {
+        status: "pending",
+        pendingMessage: data.pendingMessage,
+        growthPoints: data.growthPoints,
+        pointsEarned: data.pointsEarned,
+        currentStreak: data.currentStreak,
+      };
+      setPending(result);
+      setState("pending");
+      onPending(result);
+      return;
+    }
+
+    const result: ScoredResult = {
+      status: "scored",
+      markerCount: data.markerCount,
+      markers: data.markers,
+      growthPoints: data.growthPoints,
+      pointsEarned: data.pointsEarned,
+      currentStreak: data.currentStreak,
+    };
+    setScored(result);
+    setState("scored");
+    onScored(result);
   }
 
-  // "accepted" state: TodayClient.handleAccepted sets completed=true and
-  // renders the success block itself — return null here to avoid a flash.
-  if (state === "accepted") return null;
+  // Scored state — show the user's submitted text (read-only) above the
+  // MarkerReveal. TodayClient's success block also renders a MarkerReveal,
+  // but the one here animates in immediately after the submission.
+  if (state === "scored" && scored) {
+    return (
+      <motion.div layout className="space-y-3" data-testid="reflection-scored">
+        <div className="rounded-xl bg-white/10 px-4 py-3 text-sm leading-relaxed text-white/90">
+          {text}
+        </div>
+        <div className="rounded-xl bg-white/8 px-4 py-4">
+          <MarkerReveal
+            markers={scored.markers}
+            markerCount={scored.markerCount}
+            animate={true}
+          />
+        </div>
+      </motion.div>
+    );
+  }
 
+  // Pending state — neutral banner only, no MarkerReveal. The user will
+  // see a marker breakdown in the journal after lazy re-scoring.
+  if (state === "pending" && pending) {
+    return (
+      <motion.div layout className="space-y-3">
+        <div className="rounded-xl bg-white/10 px-4 py-3 text-sm leading-relaxed text-white/90">
+          {text}
+        </div>
+        <div
+          data-testid="pending-banner"
+          className="rounded-xl bg-white/8 px-4 py-3 text-sm leading-relaxed text-white/90"
+        >
+          {pending.pendingMessage}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // idle / submitting — the editable form. The morning-intention prompt
+  // (Story 2) will override the label; the default is spec's fallback
+  // "What happened today?". ~20-char hint removed — the new judge rewards
+  // concrete moments, not length.
   return (
     <motion.div layout className="space-y-3">
       <label className="block space-y-1.5">
         <span className="text-sm font-medium text-primary">
-          How did you apply today&apos;s verse?
+          What happened today?
         </span>
         <Textarea
+          data-testid="reflection-textarea"
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-            if (state === "nudge") setState("idle");
+            if (errorMessage) setErrorMessage("");
           }}
           rows={5}
-          className="min-h-[140px] border-[var(--green-fog)] focus-visible:border-[var(--green-mid)] resize-none"
+          className="min-h-[140px] resize-none border-[var(--green-fog)] focus-visible:border-[var(--green-mid)]"
           placeholder="Share what you did, felt, or noticed today..."
         />
-        <div className="flex justify-between text-xs px-0.5">
-          <span className="text-[var(--ink-soft)]/70">
-            ~20 chars helps the model understand
-          </span>
+        <div className="flex justify-end px-0.5 text-xs">
           <span
             className={
               text.length < 20
-                ? "text-[var(--ink-soft)]/50 tabular-nums"
-                : "text-primary/80 tabular-nums"
+                ? "tabular-nums text-[var(--ink-soft)]/50"
+                : "tabular-nums text-primary/80"
             }
           >
             {text.length}
@@ -93,14 +193,14 @@ export default function ReflectionForm({ missionId, onAccepted }: Props) {
       </label>
 
       <AnimatePresence>
-        {state === "nudge" && feedback && (
+        {errorMessage && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <Alert variant="warning">
-              <AlertDescription>{feedback}</AlertDescription>
+            <Alert variant="destructive">
+              <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           </motion.div>
         )}
@@ -108,8 +208,9 @@ export default function ReflectionForm({ missionId, onAccepted }: Props) {
 
       <Button
         onClick={submit}
+        data-testid="reflection-submit"
         disabled={!text.trim() || state === "submitting"}
-        className="w-full rounded-xl gap-2 group"
+        className="group w-full gap-2 rounded-xl"
         size="lg"
       >
         {state === "submitting" ? (
@@ -117,8 +218,6 @@ export default function ReflectionForm({ missionId, onAccepted }: Props) {
             <Loader2 className="animate-spin" />
             Reflecting…
           </>
-        ) : state === "nudge" ? (
-          "Try again"
         ) : (
           <>
             Submit reflection
