@@ -2,12 +2,14 @@
 // Extracted from app/reflections/ReflectionArchive.tsx so the logic is
 // unit-testable without rendering the client component.
 
+import type { MarkerBundle } from "@/lib/llm/types";
+
 export interface ReflectionLike {
   id: string;
   text: string;
-  llm_verdict?: string;
-  llm_feedback?: string | null;
-  depth_score?: number | null;
+  marker_count: number | null;
+  markers_json: MarkerBundle | null;
+  status: "scored" | "pending";
 }
 
 export interface ReflectionEntry {
