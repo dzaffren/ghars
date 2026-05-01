@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type {
   LLMProvider,
+  MarkerBundle,
   PickMissionInput,
   PickMissionResult,
   JudgeReflectionInput,
@@ -71,26 +72,74 @@ const SUGGEST_TOOL: Anthropic.Tool = {
   },
 };
 
+// Per-marker JSON schema fragment reused for each of the five markers. A
+// verbatim `triggering_phrase` is required when present=true; an encouraging
+// ≤12-word `coaching_prompt` is required when present=false. The schema is
+// enforced server-side by Anthropic's tool-use mode.
+const MARKER_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    present: {
+      type: "boolean",
+      description: "Whether the marker is present in the reflection",
+    },
+    triggering_phrase: {
+      type: "string",
+      description:
+        "Verbatim substring copied from the user's reflection (required when present=true).",
+    },
+    coaching_prompt: {
+      type: "string",
+      description:
+        "≤12 words, encouraging, starts with 'Next time' or 'For tomorrow' (required when present=false).",
+    },
+  },
+  required: ["present"],
+};
+
 const JUDGE_TOOL: Anthropic.Tool = {
   name: "judge_reflection",
-  description: "Return verdict, feedback, depth score, and optional next step",
+  description:
+    "Return the five application-rubric markers for the user's reflection. Each marker has a `present` boolean; present=true needs a verbatim `triggering_phrase`, present=false needs an encouraging `coaching_prompt`.",
   input_schema: {
     type: "object" as const,
     properties: {
-      verdict: { type: "string", enum: ["accepted", "soft_nudge"] },
-      feedback: {
-        type: "string",
-        description: "Encouraging feedback or gentle nudge",
-      },
-      depth_score: { type: "number", description: "1-5 depth score" },
-      next_step: {
-        type: "string",
-        description:
-          "One concrete suggestion for tomorrow (accepted only, ≤2 sentences)",
+      markers: {
+        type: "object",
+        properties: {
+          specific_moment: MARKER_SCHEMA,
+          behavioral_change: MARKER_SCHEMA,
+          temporal_anchor: MARKER_SCHEMA,
+          honest_friction: MARKER_SCHEMA,
+          next_step: MARKER_SCHEMA,
+        },
+        required: [
+          "specific_moment",
+          "behavioral_change",
+          "temporal_anchor",
+          "honest_friction",
+          "next_step",
+        ],
       },
     },
-    required: ["verdict", "feedback", "depth_score"],
+    required: ["markers"],
   },
+};
+
+type RawMarker = {
+  present: boolean;
+  triggering_phrase?: string;
+  coaching_prompt?: string;
+};
+
+type RawJudgeInput = {
+  markers: {
+    specific_moment: RawMarker;
+    behavioral_change: RawMarker;
+    temporal_anchor: RawMarker;
+    honest_friction: RawMarker;
+    next_step: RawMarker;
+  };
 };
 
 export class AnthropicLLM implements LLMProvider {
@@ -175,9 +224,12 @@ export class AnthropicLLM implements LLMProvider {
   async judgeReflection(
     input: JudgeReflectionInput
   ): Promise<JudgeReflectionResult> {
+    // max_tokens bumped from 512 → 768: the nested markers payload carries
+    // five `triggering_phrase` / `coaching_prompt` strings and can clip mid-
+    // object on long reflections at the old ceiling.
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 512,
+      max_tokens: 768,
       system: [
         {
           type: "text",
@@ -203,18 +255,18 @@ export class AnthropicLLM implements LLMProvider {
     if (!toolUse || toolUse.type !== "tool_use") {
       throw new Error("LLM did not return tool use");
     }
-    const inp = toolUse.input as {
-      verdict: "accepted" | "soft_nudge";
-      feedback: string;
-      depth_score: number;
-      next_step?: string;
+    const inp = toolUse.input as RawJudgeInput;
+    const markers: MarkerBundle = {
+      specific_moment: inp.markers.specific_moment,
+      behavioral_change: inp.markers.behavioral_change,
+      temporal_anchor: inp.markers.temporal_anchor,
+      honest_friction: inp.markers.honest_friction,
+      next_step: inp.markers.next_step,
     };
-    return {
-      verdict: inp.verdict,
-      feedback: inp.feedback,
-      depthScore: Math.min(5, Math.max(1, Math.round(inp.depth_score))),
-      nextStep:
-        inp.verdict === "accepted" ? (inp.next_step ?? undefined) : undefined,
-    };
+    // Count in code rather than trust the model — the handler's substring
+    // integrity check (Task 3) may also flip markers from true→false, so
+    // upstream callers should always rely on this derived value.
+    const markerCount = Object.values(markers).filter((m) => m.present).length;
+    return { markers, markerCount };
   }
 }

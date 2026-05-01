@@ -34,14 +34,40 @@ export class StubLLM implements LLMProvider {
     };
   }
 
+  // Returns a deterministic 3-of-5 marker payload regardless of input, so
+  // integration tests can assert against a fixed shape without mocking.
+  // The three "present" markers use the word "today" as their triggering
+  // phrase — it is near-universal in test reflection fixtures, which keeps
+  // the API-handler substring-integrity check from flipping them back to
+  // absent during tests. The two "absent" markers carry a canned coaching
+  // prompt beginning with "Next time" to match the v2 contract.
   async judgeReflection(
     _input: JudgeReflectionInput
   ): Promise<JudgeReflectionResult> {
     return {
-      verdict: "accepted",
-      feedback:
-        "JazakAllah khayran for your reflection. Keep building this habit.",
-      depthScore: 3,
+      markers: {
+        specific_moment: {
+          present: true,
+          triggering_phrase: "today",
+        },
+        behavioral_change: {
+          present: true,
+          triggering_phrase: "today",
+        },
+        temporal_anchor: {
+          present: true,
+          triggering_phrase: "today",
+        },
+        honest_friction: {
+          present: false,
+          coaching_prompt: "Next time, try naming what made it hard",
+        },
+        next_step: {
+          present: false,
+          coaching_prompt: "Next time, try one small thing for tomorrow",
+        },
+      },
+      markerCount: 3,
     };
   }
 
