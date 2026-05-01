@@ -29,6 +29,9 @@ const ENTRIES: ReflectionEntry[] = [
       {
         id: "r1",
         text: "I smiled at the barista this morning and she smiled back",
+        marker_count: 3,
+        markers_json: null,
+        status: "scored",
       },
     ],
   }),
@@ -40,6 +43,9 @@ const ENTRIES: ReflectionEntry[] = [
     reflections: {
       id: "r2",
       text: "Traffic today tested me; I remembered to breathe",
+      marker_count: null,
+      markers_json: null,
+      status: "pending",
     },
   }),
   entry({
@@ -47,7 +53,15 @@ const ENTRIES: ReflectionEntry[] = [
     mission_text: "Say Alhamdulillah five times with intention",
     verse_translation: "If you are grateful, I will surely give you more",
     focus_area: "gratitude",
-    reflections: [{ id: "r3", text: "Counted three blessings before bed" }],
+    reflections: [
+      {
+        id: "r3",
+        text: "Counted three blessings before bed",
+        marker_count: 2,
+        markers_json: null,
+        status: "scored",
+      },
+    ],
   }),
   entry({
     id: "e4",

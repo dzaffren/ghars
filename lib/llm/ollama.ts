@@ -1,12 +1,15 @@
 import { Ollama } from "ollama";
 import type {
   LLMProvider,
+  MarkerBundle,
   PickMissionInput,
   PickMissionResult,
   JudgeReflectionInput,
   JudgeReflectionResult,
   SuggestWordsInput,
   SuggestWordsResult,
+  SuggestIntentionInput,
+  SuggestIntentionResult,
 } from "./types";
 import {
   PICK_MISSION_SYSTEM,
@@ -15,6 +18,8 @@ import {
   buildJudgeReflectionPrompt,
   SUGGEST_WORDS_SYSTEM,
   buildSuggestWordsPrompt,
+  SUGGEST_INTENTION_SYSTEM,
+  buildSuggestIntentionPrompt,
 } from "./prompts";
 
 const ollama = new Ollama({
@@ -57,28 +62,35 @@ Respond with ONLY valid JSON in this exact format:
   async judgeReflection(
     input: JudgeReflectionInput
   ): Promise<JudgeReflectionResult> {
+    // Ollama tool-use is less reliable than Anthropic's; the API handler's
+    // substring integrity check (Task 3) catches any hallucinated
+    // triggering_phrase values, so we accept degraded quality here.
     const prompt = `${JUDGE_REFLECTION_SYSTEM}
 
 ${buildJudgeReflectionPrompt(input.mission, input.verseTranslation, input.reflection)}
 
 Respond with ONLY valid JSON in this exact format:
-{"verdict": "accepted" or "soft_nudge", "feedback": "...", "depth_score": 1-5}`;
+{
+  "markers": {
+    "specific_moment": {"present": true|false, "triggering_phrase": "verbatim substring of reflection", "coaching_prompt": "Next time, ..."},
+    "behavioral_change": {"present": true|false, "triggering_phrase": "...", "coaching_prompt": "..."},
+    "temporal_anchor": {"present": true|false, "triggering_phrase": "...", "coaching_prompt": "..."},
+    "honest_friction": {"present": true|false, "triggering_phrase": "...", "coaching_prompt": "..."},
+    "next_step": {"present": true|false, "triggering_phrase": "...", "coaching_prompt": "..."}
+  }
+}
+Include "triggering_phrase" only when present=true; include "coaching_prompt" only when present=false.`;
 
     const response = await ollama.generate({
       model: MODEL,
       prompt,
       stream: false,
     });
-    const parsed = extractJSON(response.response) as {
-      verdict: "accepted" | "soft_nudge";
-      feedback: string;
-      depth_score: number;
+    const { markers } = extractJSON(response.response) as {
+      markers: MarkerBundle;
     };
-    return {
-      verdict: parsed.verdict,
-      feedback: parsed.feedback,
-      depthScore: Math.min(5, Math.max(1, Math.round(parsed.depth_score))),
-    };
+    const markerCount = Object.values(markers).filter((m) => m.present).length;
+    return { markers, markerCount };
   }
 
   async suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult> {
@@ -101,5 +113,27 @@ Return 1-2 items only.`;
     return {
       suggestions: (parsed.suggestions ?? []).slice(0, 2),
     };
+  }
+
+  async suggestIntention(
+    input: SuggestIntentionInput
+  ): Promise<SuggestIntentionResult> {
+    const prompt = `${SUGGEST_INTENTION_SYSTEM}
+
+${buildSuggestIntentionPrompt(input.missionText, input.verseTranslation)}
+
+Respond with ONLY valid JSON in this exact format:
+{"suggestion": "..."}`;
+
+    const response = await ollama.generate({
+      model: MODEL,
+      prompt,
+      stream: false,
+    });
+    const parsed = extractJSON(response.response) as { suggestion: string };
+    const suggestion = (parsed.suggestion ?? "").trim();
+    // Truncate rather than throw — Ollama responses are less reliable and
+    // truncation is safer than a hard error in a dev environment.
+    return { suggestion: suggestion.slice(0, 240) };
   }
 }

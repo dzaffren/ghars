@@ -14,7 +14,7 @@ export default async function ReflectionsPage() {
     .from("daily_missions")
     .select(
       `id, local_date, verse_key, verse_translation, mission_text, focus_area,
-       reflections(id, text, llm_verdict, llm_feedback, depth_score)`
+       reflections(id, text, marker_count, markers_json, status, created_at)`
     )
     .eq("user_id", session.userId)
     .order("local_date", { ascending: false })
