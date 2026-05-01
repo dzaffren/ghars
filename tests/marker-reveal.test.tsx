@@ -130,3 +130,32 @@ describe("MarkerReveal — present markers render the triggering phrase", () => 
     expect(html).toContain("Tomorrow I&#x27;ll just do the dishes");
   });
 });
+
+describe("MarkerReveal — summary line", () => {
+  it("renders '0 of 5 markers present' when markerCount=0", () => {
+    const html = renderToStaticMarkup(
+      <MarkerReveal
+        markers={allFiveFalse("Next time, try naming a moment")}
+        markerCount={0}
+        animate={false}
+      />
+    );
+    // marker-summary element carries the count text — assert against the
+    // interpolated value directly.
+    expect(html).toContain('data-testid="marker-summary"');
+    expect(html).toContain("0 of 5 markers present");
+    // And — critically — NO numeric 1-to-5 grade anywhere.
+    expect(html).not.toMatch(/\b[1-5]\s*\/\s*5\b/);
+  });
+
+  it("renders '5 of 5 markers present' when markerCount=5", () => {
+    const html = renderToStaticMarkup(
+      <MarkerReveal
+        markers={allFiveTrue("at Maghrib")}
+        markerCount={5}
+        animate={false}
+      />
+    );
+    expect(html).toContain("5 of 5 markers present");
+  });
+});
