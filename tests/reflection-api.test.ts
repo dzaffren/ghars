@@ -30,7 +30,7 @@ type DbCall =
 
 interface StubState {
   calls: DbCall[];
-  primedSelects: Map<string, { data: unknown | null }>;
+  primedSelects: Map<string, { data: unknown | null; error: null }>;
 }
 
 function makeStubState(): StubState {
@@ -245,6 +245,7 @@ describe("submitReflection — scored happy path", () => {
         longest_streak: 0,
         last_completed_date: null,
       },
+      error: null,
     });
 
     const { submitReflection } = await import("@/lib/mission/judge");
@@ -342,6 +343,7 @@ describe("submitReflection — judge outage fallback", () => {
         longest_streak: 0,
         last_completed_date: null,
       },
+      error: null,
     });
 
     const { submitReflection } = await import("@/lib/mission/judge");
@@ -427,6 +429,7 @@ describe("submitReflection — streak bonus", () => {
         longest_streak: 4,
         last_completed_date: yesterday,
       },
+      error: null,
     });
 
     const { submitReflection } = await import("@/lib/mission/judge");
@@ -455,6 +458,7 @@ describe("submitReflection — streak bonus", () => {
         longest_streak: 7,
         last_completed_date: "2020-01-01",
       },
+      error: null,
     });
 
     const { submitReflection } = await import("@/lib/mission/judge");

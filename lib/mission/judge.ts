@@ -80,15 +80,18 @@ export async function submitReflection(
   let persistedStatus: "scored" | "pending" = "pending";
 
   if (scored) {
-    const { markers: cleanedMarkers, flippedMarkers } = applySubstringIntegrity(
+    const integrity = applySubstringIntegrity(
       scored.markers,
       sub.reflectionText
-    );
-    if (flippedMarkers.length > 0) {
-      logEvent("judge_phrase_mismatch", { reflectionId, flippedMarkers });
+    ) as { markers: MarkerBundle; flippedMarkers: string[] };
+    if (integrity.flippedMarkers.length > 0) {
+      logEvent("judge_phrase_mismatch", {
+        reflectionId,
+        flippedMarkers: integrity.flippedMarkers,
+      });
     }
-    persistedMarkers = cleanedMarkers;
-    persistedMarkerCount = Object.values(cleanedMarkers).filter(
+    persistedMarkers = integrity.markers;
+    persistedMarkerCount = Object.values(integrity.markers).filter(
       (m) => m.present
     ).length;
     persistedStatus = "scored";
