@@ -119,26 +119,27 @@ export async function submitReflection(
       ? PENDING_POINTS
       : computePoints(persistedMarkerCount);
 
+  type GardenRow = {
+    last_completed_date?: string | null;
+    current_streak?: number;
+    longest_streak?: number;
+    growth_points?: number;
+  };
   const { data: garden } = await db
     .from("gardens")
     .select("*")
     .eq("user_id", sub.userId)
     .single();
+  const g = (garden ?? null) as GardenRow | null;
 
   const today = new Date().toISOString().slice(0, 10);
-  const lastDate =
-    (garden as { last_completed_date?: string | null } | null)
-      ?.last_completed_date ?? null;
   const yesterday = new Date(Date.now() - 86_400_000)
     .toISOString()
     .slice(0, 10);
-
-  const previousStreak =
-    (garden as { current_streak?: number } | null)?.current_streak ?? 0;
-  const previousLongest =
-    (garden as { longest_streak?: number } | null)?.longest_streak ?? 0;
-  const previousPoints =
-    (garden as { growth_points?: number } | null)?.growth_points ?? 0;
+  const lastDate = g?.last_completed_date ?? null;
+  const previousStreak = g?.current_streak ?? 0;
+  const previousLongest = g?.longest_streak ?? 0;
+  const previousPoints = g?.growth_points ?? 0;
 
   const newStreak = lastDate === yesterday ? previousStreak + 1 : 1;
   const newLongest = Math.max(newStreak, previousLongest);
