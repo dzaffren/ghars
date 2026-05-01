@@ -49,31 +49,26 @@ function cleanMarker(
 export function applySubstringIntegrity(
   markers: MarkerBundle,
   reflectionText: string
-): { markers: MarkerBundle; markerCount: number } {
-  const cleaned: MarkerBundle = {
-    specific_moment: cleanMarker(
-      markers.specific_moment,
-      reflectionText,
-      "specific_moment"
-    ),
-    behavioral_change: cleanMarker(
-      markers.behavioral_change,
-      reflectionText,
-      "behavioral_change"
-    ),
-    temporal_anchor: cleanMarker(
-      markers.temporal_anchor,
-      reflectionText,
-      "temporal_anchor"
-    ),
-    honest_friction: cleanMarker(
-      markers.honest_friction,
-      reflectionText,
-      "honest_friction"
-    ),
-    next_step: cleanMarker(markers.next_step, reflectionText, "next_step"),
-  };
+): { markers: MarkerBundle; markerCount: number; flippedMarkers: string[] } {
+  const flippedMarkers: string[] = [];
+  const keys: Array<keyof MarkerBundle> = [
+    "specific_moment",
+    "behavioral_change",
+    "temporal_anchor",
+    "honest_friction",
+    "next_step",
+  ];
+
+  const cleaned = {} as MarkerBundle;
+  for (const key of keys) {
+    const original = markers[key];
+    const next = cleanMarker(original, reflectionText, key);
+    cleaned[key] = next;
+    if (original.present && !next.present) {
+      flippedMarkers.push(key);
+    }
+  }
 
   const markerCount = Object.values(cleaned).filter((m) => m.present).length;
-  return { markers: cleaned, markerCount };
+  return { markers: cleaned, markerCount, flippedMarkers };
 }
