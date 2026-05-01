@@ -8,6 +8,8 @@ import type {
   JudgeReflectionResult,
   SuggestWordsInput,
   SuggestWordsResult,
+  SuggestIntentionInput,
+  SuggestIntentionResult,
 } from "./types";
 import {
   PICK_MISSION_SYSTEM,
@@ -16,9 +18,26 @@ import {
   buildJudgeReflectionPrompt,
   SUGGEST_WORDS_SYSTEM,
   buildSuggestWordsPrompt,
+  SUGGEST_INTENTION_SYSTEM,
+  buildSuggestIntentionPrompt,
 } from "./prompts";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const INTENTION_SUGGESTION_TOOL: Anthropic.Tool = {
+  name: "suggest_intention",
+  description:
+    "Return a single one-line concrete intention (≤240 characters) naming a specific time, place, or person where the user can try today's mission",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      suggestion: {
+        type: "string",
+        description:
+          "One-line concrete intention, ≤240 characters, naming a specific time/place/person",
+      },
+    },
+    required: ["suggestion"],
+  },
+};
 
 const PICK_TOOL: Anthropic.Tool = {
   name: "pick_mission",
@@ -127,8 +146,10 @@ const JUDGE_TOOL: Anthropic.Tool = {
 };
 
 export class AnthropicLLM implements LLMProvider {
+  private client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
   async pickMission(input: PickMissionInput): Promise<PickMissionResult> {
-    const response = await client.messages.create({
+    const response = await this.client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 512,
       system: [
@@ -169,7 +190,7 @@ export class AnthropicLLM implements LLMProvider {
   }
 
   async suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult> {
-    const response = await client.messages.create({
+    const response = await this.client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 256,
       system: [
@@ -211,7 +232,7 @@ export class AnthropicLLM implements LLMProvider {
     // max_tokens bumped from 512 → 768: the nested markers payload carries
     // five `triggering_phrase` / `coaching_prompt` strings and can clip mid-
     // object on long reflections at the old ceiling.
-    const response = await client.messages.create({
+    const response = await this.client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 768,
       system: [
@@ -245,5 +266,43 @@ export class AnthropicLLM implements LLMProvider {
     // upstream callers should always rely on this derived value.
     const markerCount = Object.values(markers).filter((m) => m.present).length;
     return { markers, markerCount };
+  }
+
+  async suggestIntention(
+    input: SuggestIntentionInput
+  ): Promise<SuggestIntentionResult> {
+    const response = await this.client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 128,
+      system: [
+        {
+          type: "text",
+          text: SUGGEST_INTENTION_SYSTEM,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [
+        {
+          role: "user",
+          content: buildSuggestIntentionPrompt(
+            input.missionText,
+            input.verseTranslation
+          ),
+        },
+      ],
+      tools: [INTENTION_SUGGESTION_TOOL],
+      tool_choice: { type: "tool", name: "suggest_intention" },
+    });
+
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
+      throw new Error("LLM did not return tool use");
+    }
+    const { suggestion } = toolUse.input as { suggestion: string };
+    const trimmed = suggestion.trim();
+    if (trimmed.length > 240) {
+      throw new Error("Suggestion too long: " + trimmed.length + " chars");
+    }
+    return { suggestion: trimmed };
   }
 }

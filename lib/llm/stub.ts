@@ -6,6 +6,8 @@ import type {
   JudgeReflectionResult,
   SuggestWordsInput,
   SuggestWordsResult,
+  SuggestIntentionInput,
+  SuggestIntentionResult,
 } from "./types";
 
 // Deterministic fallback used when no LLM API key is configured.
@@ -76,6 +78,14 @@ export class StubLLM implements LLMProvider {
       suggestions: [
         { position: 1, reason: "A key word in this verse worth learning." },
       ],
+    };
+  }
+
+  async suggestIntention(
+    _input: SuggestIntentionInput
+  ): Promise<SuggestIntentionResult> {
+    return {
+      suggestion: "At lunch, try today's mission with the next person you meet",
     };
   }
 }

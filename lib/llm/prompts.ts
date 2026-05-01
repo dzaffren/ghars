@@ -99,6 +99,32 @@ export const SUGGEST_WORDS_SYSTEM = `You are a Quranic Arabic vocabulary tutor. 
 - Appear frequently in Quranic vocabulary
 - Have clear, memorable meanings that connect to the verse's message`;
 
+export const SUGGEST_INTENTION_SYSTEM = `You generate a single one-line intention a Muslim can act on today, grounded in today's mission. The intention must:
+- Be ≤240 characters
+- Name a specific time, place, or person — not restate the mission abstractly
+- Never restate or paraphrase the mission verbatim
+- Feel warm and actionable, not preachy
+
+## Few-shot examples
+
+Mission: "Practice patience with someone who frustrates you today"
+Intention: "At the afternoon meeting, don't interrupt Rahim when he speaks"
+
+Mission: "Offer kindness to someone who wouldn't expect it"
+Intention: "Bring coffee to the night-shift guard at your building"
+
+Return only the intention text — no preamble, no quotes, no explanation.`;
+
+export function buildSuggestIntentionPrompt(
+  missionText: string,
+  verseTranslation: string
+): string {
+  return `Today's verse (context only): "${verseTranslation}"
+Today's mission: "${missionText}"
+
+Generate a single one-line concrete intention (≤240 characters) naming a specific time, place, or person where the user can try this mission today.`;
+}
+
 export function buildSuggestWordsPrompt(
   verseArabic: string,
   verseTranslation: string,

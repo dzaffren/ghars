@@ -8,6 +8,8 @@ import type {
   JudgeReflectionResult,
   SuggestWordsInput,
   SuggestWordsResult,
+  SuggestIntentionInput,
+  SuggestIntentionResult,
 } from "./types";
 import {
   PICK_MISSION_SYSTEM,
@@ -16,6 +18,8 @@ import {
   buildJudgeReflectionPrompt,
   SUGGEST_WORDS_SYSTEM,
   buildSuggestWordsPrompt,
+  SUGGEST_INTENTION_SYSTEM,
+  buildSuggestIntentionPrompt,
 } from "./prompts";
 
 const ollama = new Ollama({
@@ -109,5 +113,27 @@ Return 1-2 items only.`;
     return {
       suggestions: (parsed.suggestions ?? []).slice(0, 2),
     };
+  }
+
+  async suggestIntention(
+    input: SuggestIntentionInput
+  ): Promise<SuggestIntentionResult> {
+    const prompt = `${SUGGEST_INTENTION_SYSTEM}
+
+${buildSuggestIntentionPrompt(input.missionText, input.verseTranslation)}
+
+Respond with ONLY valid JSON in this exact format:
+{"suggestion": "..."}`;
+
+    const response = await ollama.generate({
+      model: MODEL,
+      prompt,
+      stream: false,
+    });
+    const parsed = extractJSON(response.response) as { suggestion: string };
+    const suggestion = (parsed.suggestion ?? "").trim();
+    // Truncate rather than throw — Ollama responses are less reliable and
+    // truncation is safer than a hard error in a dev environment.
+    return { suggestion: suggestion.slice(0, 240) };
   }
 }

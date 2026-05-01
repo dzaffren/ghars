@@ -68,8 +68,20 @@ export interface SuggestWordsResult {
   suggestions: SuggestWordItem[]; // 1-2 items
 }
 
+export interface SuggestIntentionInput {
+  missionText: string; // the day's one-sentence mission
+  verseTranslation: string; // translation of the day's verse (for context)
+}
+
+export interface SuggestIntentionResult {
+  suggestion: string; // ≤240 chars; concrete, names a time/place/person
+}
+
 export interface LLMProvider {
   pickMission(input: PickMissionInput): Promise<PickMissionResult>;
   judgeReflection(input: JudgeReflectionInput): Promise<JudgeReflectionResult>;
   suggestWords(input: SuggestWordsInput): Promise<SuggestWordsResult>;
+  suggestIntention(
+    input: SuggestIntentionInput
+  ): Promise<SuggestIntentionResult>;
 }
