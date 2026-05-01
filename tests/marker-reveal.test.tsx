@@ -59,6 +59,42 @@ describe("MarkerReveal — row ordering", () => {
   });
 });
 
+describe("MarkerReveal — absent markers render the coaching prompt", () => {
+  it("renders each coaching_prompt when a marker is absent", () => {
+    const markers: MarkerBundle = {
+      specific_moment: {
+        present: false,
+        coaching_prompt: "Next time, try naming a moment from today",
+      },
+      behavioral_change: {
+        present: false,
+        coaching_prompt: "Next time, try naming something you did",
+      },
+      temporal_anchor: {
+        present: false,
+        coaching_prompt: "For tomorrow, ground your reflection in today",
+      },
+      honest_friction: {
+        present: false,
+        coaching_prompt: "Next time, try naming what made it hard",
+      },
+      next_step: {
+        present: false,
+        coaching_prompt: "Next time, name one small thing for tomorrow",
+      },
+    };
+    const html = renderToStaticMarkup(
+      <MarkerReveal markers={markers} markerCount={0} animate={false} />
+    );
+
+    expect(html).toContain("Next time, try naming a moment from today");
+    expect(html).toContain("Next time, try naming something you did");
+    expect(html).toContain("For tomorrow, ground your reflection in today");
+    expect(html).toContain("Next time, try naming what made it hard");
+    expect(html).toContain("Next time, name one small thing for tomorrow");
+  });
+});
+
 describe("MarkerReveal — present markers render the triggering phrase", () => {
   it("renders the exact triggering_phrase verbatim for each present marker", () => {
     const markers: MarkerBundle = {
