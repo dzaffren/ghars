@@ -1,10 +1,15 @@
 import DashboardCard from "./DashboardCard";
 
+// Dashboard widget preview for the latest reflection on /today. The v2
+// rubric replaces the retired depth score with a marker count; the
+// widget stays compact — a single "N of 5 markers" caption is enough,
+// the full breakdown lives on the detail page.
 export interface JournalEntryPreview {
   id: string;
   local_date: string;
   mission_text: string;
-  depth_score: number | null;
+  marker_count: number | null;
+  status: "scored" | "pending";
 }
 
 interface Props {
@@ -20,20 +25,6 @@ function formatDate(d: string) {
   } catch {
     return d;
   }
-}
-
-// SVG star — avoids emoji / unicode inconsistency
-function DepthDots({ score }: { score: number }) {
-  return (
-    <div className="mt-2 flex gap-0.5" aria-label={`${score} of 5 depth`}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          className={`inline-block h-1.5 w-1.5 rounded-full ${i < score ? "bg-[#d4a017]" : "bg-[var(--cream-deep)]"}`}
-        />
-      ))}
-    </div>
-  );
 }
 
 export default function JournalWidget({ entry }: Props) {
@@ -52,7 +43,11 @@ export default function JournalWidget({ entry }: Props) {
           <p className="text-xs text-[#1a3a2a] line-clamp-2 leading-snug">
             {entry.mission_text}
           </p>
-          {entry.depth_score && <DepthDots score={entry.depth_score} />}
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            {entry.status === "pending"
+              ? "Pending"
+              : `${entry.marker_count ?? 0} of 5 markers`}
+          </p>
         </>
       )}
     </DashboardCard>

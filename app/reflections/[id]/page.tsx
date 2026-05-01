@@ -4,7 +4,16 @@ import { getRequiredSession } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import AppHeader from "@/components/AppHeader";
 import ArabicText from "@/components/words/ArabicText";
-import { ChevronLeft, Info } from "lucide-react";
+import PendingDetailCallout from "./PendingDetailCallout";
+// MarkerReveal is authored by the parallel Task 4 agent. We import it
+// statically so the detail page renders the per-marker breakdown in
+// non-animating mode. Until the sibling branch merges, the module
+// will not resolve locally — @ts-ignore (not expect-error) so the
+// directive remains inert once the real component lands.
+// @ts-ignore — Task 4 introduces this component; resolves on merge.
+import MarkerReveal from "@/components/MarkerReveal";
+import { ChevronLeft } from "lucide-react";
+import type { MarkerBundle } from "@/lib/llm/types";
 
 function formatDate(dateStr: string) {
   try {
@@ -17,39 +26,6 @@ function formatDate(dateStr: string) {
   } catch {
     return dateStr;
   }
-}
-
-function DepthStarsWithLegend({ score }: { score: number | null }) {
-  if (!score) return null;
-  return (
-    <details className="relative">
-      <summary className="flex cursor-pointer items-center gap-1 list-none">
-        <span className="flex gap-0.5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <span
-              key={i}
-              className={`text-sm ${i < score ? "text-[#d4a017]" : "text-muted-foreground/25"}`}
-            >
-              ★
-            </span>
-          ))}
-        </span>
-        <Info
-          size={12}
-          className="text-muted-foreground/60"
-          aria-label="What do the stars mean?"
-        />
-      </summary>
-      <div className="absolute right-0 z-10 mt-1.5 w-56 rounded-xl border border-[var(--green-fog)] bg-white/95 p-3 shadow-lg text-[11px] leading-snug space-y-1">
-        <p className="font-semibold text-[#1a3a2a]">Reflection depth</p>
-        <p className="text-muted-foreground">★ surface note</p>
-        <p className="text-muted-foreground">★★ brief thought</p>
-        <p className="text-muted-foreground">★★★ thoughtful</p>
-        <p className="text-muted-foreground">★★★★ deep</p>
-        <p className="text-muted-foreground">★★★★★ profound introspection</p>
-      </div>
-    </details>
-  );
 }
 
 export default async function ReflectionDetailPage({
@@ -69,7 +45,7 @@ export default async function ReflectionDetailPage({
       `
       id, local_date, verse_key, verse_arabic, verse_translation,
       tafsir_snippet, mission_text, focus_area,
-      reflections(text, llm_verdict, llm_feedback, depth_score)
+      reflections(id, text, marker_count, markers_json, status, created_at)
     `
     )
     .eq("id", id)
@@ -82,7 +58,20 @@ export default async function ReflectionDetailPage({
     ? mission.reflections[0]
     : mission.reflections;
 
-  const accepted = ref?.llm_verdict === "accepted";
+  // Narrow the Supabase row once so the render tree only has to branch
+  // on `status`. `markers_json` comes back as `any` from the json column
+  // — we trust the API-side validation performed on write.
+  type ReflectionRow = {
+    id: string;
+    text: string;
+    marker_count: number | null;
+    markers_json: MarkerBundle | null;
+    status: "scored" | "pending";
+    created_at: string;
+  };
+  const reflection: ReflectionRow | null = ref
+    ? (ref as unknown as ReflectionRow)
+    : null;
 
   return (
     <div className="min-h-screen">
@@ -143,36 +132,31 @@ export default async function ReflectionDetailPage({
         </div>
 
         {/* Reflection */}
-        {ref ? (
+        {reflection ? (
           <div className="space-y-3">
             <div className="rounded-2xl border border-[var(--green-fog)] bg-white/80 px-5 py-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--ink-soft)]">
-                  Your reflection
-                </p>
-                <div className="flex items-center gap-2">
-                  <DepthStarsWithLegend score={ref.depth_score ?? null} />
-                  {!accepted && (
-                    <span className="text-[10px] text-muted-foreground">
-                      not completed
-                    </span>
-                  )}
-                </div>
-              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--ink-soft)]">
+                Your reflection
+              </p>
               <p className="text-sm leading-relaxed text-foreground">
-                {ref.text}
+                {reflection.text}
               </p>
             </div>
 
-            {ref.llm_feedback && (
-              <div className="rounded-2xl bg-[var(--cream-deep)] px-5 py-4 space-y-1">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--ink-soft)]/60">
-                  Feedback
-                </p>
-                <p className="text-sm italic text-[var(--ink-soft)]/80">
-                  {ref.llm_feedback}
-                </p>
-              </div>
+            {/* Marker breakdown or pending banner depending on status.
+                The MarkerReveal renders in static (non-animating) mode
+                — the animation plays exactly once on submission, per
+                the spec. */}
+            {reflection.status === "scored" &&
+            reflection.marker_count !== null &&
+            reflection.markers_json ? (
+              <MarkerReveal
+                markers={reflection.markers_json}
+                markerCount={reflection.marker_count}
+                animate={false}
+              />
+            ) : (
+              <PendingDetailCallout reflectionId={reflection.id} />
             )}
           </div>
         ) : (
