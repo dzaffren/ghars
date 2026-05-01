@@ -67,7 +67,7 @@ export default async function HistoryPage() {
   const [{ data: missions }, { data: garden }, qfStreaks] = await Promise.all([
     db
       .from("daily_missions")
-      .select("local_date, reflections(llm_verdict)")
+      .select("local_date, reflections(status)")
       .eq("user_id", session.userId)
       .gte("local_date", sixtyDaysAgoStr)
       .order("local_date", { ascending: true }),
@@ -82,14 +82,17 @@ export default async function HistoryPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const qfStreak: number | null = (qfStreaks as any)?.data?.streak ?? null;
 
-  // Build a set of dates where the mission was completed
+  // Build a set of dates where the mission was completed. Under the v2
+  // rubric, any reflection row at all (scored or pending) counts as
+  // completed — pending is a scored-in-waiting state, not an incomplete
+  // one. So the mere presence of a reflection is sufficient.
   const completedDates = new Set<string>(
     (missions ?? [])
       .filter((m) => {
         const ref = Array.isArray(m.reflections)
           ? m.reflections[0]
           : m.reflections;
-        return ref?.llm_verdict === "accepted";
+        return ref != null;
       })
       .map((m) => m.local_date as string)
   );

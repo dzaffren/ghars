@@ -7,6 +7,7 @@ import { getWeeklyTheme, getISOWeek } from "@/lib/mission/weekly-theme";
 import { seedStarterWords } from "@/lib/words/seed";
 import type { CirclePreview } from "@/components/dashboard/CirclesWidget";
 import type { JournalEntryPreview } from "@/components/dashboard/JournalWidget";
+import type { MarkerBundle } from "@/lib/llm/types";
 import TodayClient from "./TodayClient";
 
 function pickDailyWord(words: VerseWord[], dateStr: string): VerseWord | null {
@@ -75,7 +76,7 @@ export default async function TodayPage() {
     mission
       ? db
           .from("reflections")
-          .select("llm_verdict")
+          .select("marker_count, markers_json, status")
           .eq("mission_id", mission.id)
           .single()
       : Promise.resolve({ data: null }),
@@ -96,16 +97,15 @@ export default async function TodayPage() {
     db
       .from("reflections")
       .select(
-        "id, missions:mission_id(id, local_date, mission_text), depth_score"
+        "id, missions:mission_id(id, local_date, mission_text), marker_count, status"
       )
       .eq("user_id", uid)
-      .eq("llm_verdict", "accepted")
       .order("created_at", { ascending: false })
       .limit(1)
       .single(),
     db
       .from("daily_missions")
-      .select("local_date, reflections(llm_verdict)")
+      .select("local_date, reflections(status)")
       .eq("user_id", uid)
       .gte("local_date", from14),
     db
@@ -175,22 +175,62 @@ export default async function TodayPage() {
         id: (m as { id: string }).id,
         local_date: (m as { local_date: string }).local_date,
         mission_text: (m as { mission_text: string }).mission_text,
-        depth_score: latestReflection.depth_score,
+        marker_count:
+          (latestReflection as { marker_count: number | null }).marker_count ??
+          null,
+        status:
+          ((latestReflection as { status: "scored" | "pending" }).status as
+            | "scored"
+            | "pending") ?? "scored",
       };
     }
   }
 
-  // Build 14-day heatmap completed dates
+  // Build 14-day heatmap completed dates. Under the v2 rubric, any
+  // reflection row at all (scored or pending) counts as completed — a
+  // pending reflection means the user submitted something; the judge
+  // just hasn't caught up yet. So the presence of a reflection with
+  // any status is sufficient.
   const completedDates = (heatmapMissions ?? [])
     .filter((m) => {
       const ref = Array.isArray(m.reflections)
         ? m.reflections[0]
         : m.reflections;
-      return ref?.llm_verdict === "accepted";
+      return ref != null;
     })
     .map((m) => m.local_date as string);
 
-  const alreadyCompleted = reflection?.llm_verdict === "accepted";
+  // Same completion semantics for today's mission — if a reflection
+  // exists (scored or pending), hide the reflection form.
+  const alreadyCompleted = reflection != null;
+
+  // Marker bundle snapshot of today's submitted reflection, if any.
+  // Task 4's TodayClient consumes this to re-render the marker reveal
+  // on hydration instead of leaving the user looking at a blank screen
+  // after a refresh.
+  const todaysReflection = reflection as {
+    marker_count: number | null;
+    markers_json: MarkerBundle | null;
+    status: "scored" | "pending";
+  } | null;
+  const todaysMarkerBundle:
+    | null
+    | { status: "scored"; markers: MarkerBundle; markerCount: number }
+    | { status: "pending"; pendingMessage: string } = todaysReflection
+    ? todaysReflection.status === "scored" &&
+      todaysReflection.marker_count !== null &&
+      todaysReflection.markers_json
+      ? {
+          status: "scored",
+          markers: todaysReflection.markers_json,
+          markerCount: todaysReflection.marker_count,
+        }
+      : {
+          status: "pending",
+          pendingMessage:
+            "5 markers pending — we'll score this when we're back online",
+        }
+    : null;
   const wordOfDay = pickDailyWord(verseWords, localDate);
   const weeklyTheme = getWeeklyTheme(
     user.focus_areas ?? [],
@@ -223,6 +263,11 @@ export default async function TodayPage() {
       gardenPlants={gardenPlants ?? []}
       knownWordCount={garden?.known_word_count ?? 0}
       nextUnlockThreshold={garden?.next_unlock_threshold ?? 10}
+      // Task 4's TodayClient accepts todaysMarkerBundle to drive the
+      // marker-reveal hydration path. Passing it now so the parallel
+      // agent's merge doesn't require a follow-up here.
+      // @ts-expect-error — Task 4 adds this prop to TodayClient.
+      todaysMarkerBundle={todaysMarkerBundle}
     />
   );
 }
