@@ -159,3 +159,35 @@ describe("MarkerReveal — summary line", () => {
     expect(html).toContain("5 of 5 markers present");
   });
 });
+
+describe("MarkerReveal — static mode emits no motion transforms", () => {
+  it("does not produce inline translate/opacity styles when animate=false", () => {
+    const html = renderToStaticMarkup(
+      <MarkerReveal
+        markers={allFiveTrue("today")}
+        markerCount={5}
+        animate={false}
+      />
+    );
+
+    // Framer Motion's motion.div pre-renders `initial` styles as inline
+    // `transform: translateY(...)` / `opacity: 0`. When `animate=false` we
+    // render plain <div>s — no such inline transform should appear.
+    expect(html).not.toMatch(/style="[^"]*transform:/);
+    expect(html).not.toMatch(/style="[^"]*opacity:\s*0/);
+  });
+
+  it("emits inline motion styles when animate=true", () => {
+    // Sanity check — if this ever regresses, the "animate=false" assertion
+    // above would pass trivially. This test protects against the whole
+    // component silently dropping its animation.
+    const html = renderToStaticMarkup(
+      <MarkerReveal
+        markers={allFiveTrue("today")}
+        markerCount={5}
+        animate={true}
+      />
+    );
+    expect(html).toMatch(/opacity:\s*0/);
+  });
+});
