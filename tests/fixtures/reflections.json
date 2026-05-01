@@ -1,0 +1,257 @@
+[
+  {
+    "id": "r01",
+    "mission": "Practice patience with someone who frustrates you today",
+    "verse_translation": "And be patient, for indeed Allah does not allow to be lost the reward of those who do good",
+    "reflection_text": "At Maghrib tonight my younger sister snapped at me about the dishes I had left in the sink. I felt the heat rise in my chest and I almost snapped back the way I always do, but I paused, took a slow breath, and said 'you're right, I'm sorry, I forgot.' I washed them while she set the table. It was genuinely hard not to defend myself — I kept replaying all the times she's left her own dishes — but I let it go. Tomorrow when she gets home from work I'll just do the dishes before she has to ask.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": true,
+        "next_step": true
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 1a — eloquent five-marker gold standard with named moment, action, today-anchor, admitted struggle, and concrete tomorrow plan."
+    }
+  },
+  {
+    "id": "r02",
+    "mission": "Give sadaqah to someone you encounter in passing",
+    "verse_translation": "Those who spend their wealth by night and by day, secretly and publicly, will have their reward with their Lord",
+    "reflection_text": "This afternoon at the petrol station the guy in front of me was short £2 for his fuel. I paid it. He was embarrassed and wanted my number to pay me back. I said no, it's fine, go. Hard because I was tired from night shift and I almost just looked at my phone. Tomorrow I'll try to keep a £5 note in my jacket so I don't have to fumble.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": true,
+        "next_step": true
+      },
+      "applied_but_inelegant": true,
+      "notes": "Band 1b — blunt five-marker sample. Short, terse prose but every marker present. Also counts toward applied-but-inelegant (the writing is plain)."
+    }
+  },
+  {
+    "id": "r03",
+    "mission": "Restrain one impulse toward anger today",
+    "verse_translation": "And those who restrain anger and pardon people — and Allah loves the doers of good",
+    "reflection_text": "At the standup this morning Rachel cut me off twice while I was explaining the migration plan. I felt my chest tighten but I just waited and finished my sentence after she was done. Didn't say anything passive-aggressive in Slack after either.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 2a — classic 3-marker: named moment, action, today. No admission of real struggle beyond 'chest tighten' (borderline but I'm scoring it as missing), no next step."
+    }
+  },
+  {
+    "id": "r04",
+    "mission": "Speak kindly to your parents today",
+    "verse_translation": "And lower to them the wing of humility out of mercy",
+    "reflection_text": "Called Ammi after Asr. She started in immediately about my cousin's wedding and how I never help with anything. Normally I get defensive within thirty seconds. Today I just said 'you're right, I should have called earlier in the week' and asked what she needed. It was harder than I expected because I felt the old irritation the whole time — I bit my tongue twice.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": true,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 2b — strong 4-marker normal case. Named moment, clear behaviour change, today-anchor, admitted friction. No explicit next-step commitment."
+    }
+  },
+  {
+    "id": "r05",
+    "mission": "Reflect on what patience means in your life",
+    "verse_translation": "So be patient with gracious patience",
+    "reflection_text": "Patience is one of the most beautiful virtues in Islam. The Prophet (peace be upon him) taught us that patience is half of faith, and the Quran reminds the believers over and over again to be steadfast in the face of trials. Sabr is truly the foundation of every good character.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 3a — eloquent contemplative writing, zero application. Classic failure mode the v1 judge would score highly."
+    }
+  },
+  {
+    "id": "r06",
+    "mission": "Show gratitude in a practical way today",
+    "verse_translation": "If you are grateful, I will surely increase you",
+    "reflection_text": "I was thinking today about how shukr is really an orientation of the heart more than an action. We often forget how much we have been given and take things for granted. May Allah make us among the grateful.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 3b — shallow contemplative. Sounds spiritual, no evidence of doing anything."
+    }
+  },
+  {
+    "id": "r07",
+    "mission": "Help with a household task without being asked",
+    "verse_translation": "And do good, indeed Allah loves the doers of good",
+    "reflection_text": "Wife was on a work call, folded the laundry. She noticed.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": true,
+      "notes": "Band 4a — applied-but-inelegant. Ultra-terse but clearly did the thing; no explicit today-marker, no struggle, no next step. A v1 judge scores this a 1 or 2; v2 should see 2 markers."
+    }
+  },
+  {
+    "id": "r08",
+    "mission": "Speak truthfully even when it's inconvenient",
+    "verse_translation": "O you who have believed, fear Allah and speak words of appropriate truth",
+    "reflection_text": "Manager asked if I'd finished the Q2 report. I hadn't. Used to say 'almost done' on reflex. Said 'no, I'm about half, I'll have it Thursday.' She was fine with it.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": true,
+      "notes": "Band 4b — applied-but-inelegant. Clear behaviour change (didn't lie), named moment (manager + Q2 report), but no explicit today-anchor, no acknowledged struggle, no next step. Plain language."
+    }
+  },
+  {
+    "id": "r09",
+    "mission": "Visit or check on a sick person",
+    "verse_translation": "Whoever visits the sick, he is in the orchard of paradise",
+    "reflection_text": "Drove over to Uncle Tariq's flat after work. Sat with him an hour. He's on new chemo and was too tired to talk much. Just made tea and watched the news with him.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": true,
+      "notes": "Band 4c — applied-but-inelegant. Fully did the mission, named person/time, but written in blunt matter-of-fact prose. No eloquent reflection, no stated struggle, no next step."
+    }
+  },
+  {
+    "id": "r10",
+    "mission": "Reflect on a verse about patience",
+    "verse_translation": "And be patient, for indeed Allah does not allow to be lost the reward of those who do good",
+    "reflection_text": "And be patient, for indeed Allah does not allow to be lost the reward of those who do good.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 5 — verbatim verse echo. Should earn zero markers on that basis alone."
+    }
+  },
+  {
+    "id": "r11",
+    "mission": "Pause once before reacting to a frustration",
+    "verse_translation": "And the servants of the Most Merciful are those who walk upon the earth humbly",
+    "reflection_text": "Allah swt commands the believers to be patient and promises a great reward for those who are steadfast. Patience, or sabr, is truly the key to success in this life and the next. Subhanallah what a beautiful verse.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 6 — paraphrase/praise of the verse, no lived moment. Zero markers."
+    }
+  },
+  {
+    "id": "r12",
+    "mission": "Pause once before snapping at a family member",
+    "verse_translation": "And restrain anger and pardon the people",
+    "reflection_text": "My brother annoyed me at dinner tonight and I took a breath instead of snapping.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": true,
+        "temporal_anchor": true,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 7 — one-sentence fully-applied sample. Per the task spec: 3 markers (specific_moment, behavioral_change, temporal_anchor). No honest_friction or next step."
+    }
+  },
+  {
+    "id": "r13",
+    "mission": "Avoid one small exaggeration in speech today",
+    "verse_translation": "And do not mix the truth with falsehood",
+    "reflection_text": "Tried to catch myself at work today. At the 11am meeting I started to say our conversion rate 'doubled' last quarter when really it went up maybe 40%. I did still say 'doubled' in the end. Felt bad after. Kept thinking about it on the drive home.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": true,
+        "behavioral_change": false,
+        "temporal_anchor": true,
+        "honest_friction": true,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 8 — tried and failed. Specific moment (11am meeting, conversion rate), today-anchor, admitted failure/friction. No successful behaviour change, no explicit next step. 3 markers."
+    }
+  },
+  {
+    "id": "r14",
+    "mission": "Notice one moment of peace today",
+    "verse_translation": "Verily, in the remembrance of Allah do hearts find rest",
+    "reflection_text": "I felt really peaceful today. Alhamdulillah.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": true,
+        "honest_friction": false,
+        "next_step": false
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 9 — emotional-only. 'Today' gives a temporal anchor (borderline but I'll count it), no named moment, no behaviour, no friction, no next step. 1 marker."
+    }
+  },
+  {
+    "id": "r15",
+    "mission": "Call a family member you've been putting off",
+    "verse_translation": "And your Lord has decreed that you worship none but Him, and to parents good treatment",
+    "reflection_text": "Tomorrow I'll call my mother.",
+    "ground_truth": {
+      "markers": {
+        "specific_moment": false,
+        "behavioral_change": false,
+        "temporal_anchor": false,
+        "honest_friction": false,
+        "next_step": true
+      },
+      "applied_but_inelegant": false,
+      "notes": "Band 10 — next-step-only. No lived moment, no action taken today. Only the future commitment. 1 marker."
+    }
+  }
+]
