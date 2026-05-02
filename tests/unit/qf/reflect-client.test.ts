@@ -1,30 +1,47 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type MockInstance,
+} from "vitest";
 
-// Mock the errors module
+vi.mock("../../../lib/qf/oauth", () => ({
+  getClientCredentialsToken: vi.fn(),
+}));
+
 vi.mock("../../../lib/qf/errors", () => ({
   captureResponseError: vi.fn(),
   logQfError: vi.fn(),
 }));
 
-// Mock supabase so errors module import chain doesn't fail
 vi.mock("../../../lib/supabase/server", () => ({
   createAdminSupabaseClient: vi.fn(() => ({
     from: vi.fn(() => ({ insert: vi.fn() })),
   })),
 }));
 
-import { qfReflectFetch, getContentTokenCached } from "../../../lib/qf/client";
+import {
+  qfReflectFetch,
+  setReflectToken,
+  getReflectTokenCached,
+  getContentTokenCached,
+} from "../../../lib/qf/client";
+import { getClientCredentialsToken } from "../../../lib/qf/oauth";
 import { captureResponseError, logQfError } from "../../../lib/qf/errors";
-import type { MockInstance } from "vitest";
 
+const mockGetToken = getClientCredentialsToken as unknown as MockInstance;
 const mockCaptureError = captureResponseError as unknown as MockInstance;
 const mockLogQfError = logQfError as unknown as MockInstance;
 
-describe("qfReflectFetch — direct API key auth", () => {
+describe("qfReflectFetch — OAuth token caching", () => {
   let originalFetch: typeof global.fetch;
 
   beforeEach(() => {
     originalFetch = global.fetch;
+    setReflectToken("", -1); // force expiry
     vi.clearAllMocks();
   });
 
@@ -32,7 +49,11 @@ describe("qfReflectFetch — direct API key auth", () => {
     global.fetch = originalFetch;
   });
 
-  it("Test 1 — uses QF_CLIENT_SECRET as x-auth-token without minting an OAuth token", async () => {
+  it("Test 1 — mints token once via client_credentials and reuses it", async () => {
+    mockGetToken.mockResolvedValue({
+      access_token: "rt_abc",
+      expires_in: 3600,
+    });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -45,21 +66,20 @@ describe("qfReflectFetch — direct API key auth", () => {
     await qfReflectFetch(path);
     await qfReflectFetch(path);
 
-    // fetch called both times — no token-mint deduplication needed
+    expect(mockGetToken).toHaveBeenCalledTimes(1);
+    expect(mockGetToken).toHaveBeenCalledWith("post.read");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-
-    // Both calls carry x-auth-token from env (process.env.QF_CLIENT_SECRET ?? "")
     for (const call of fetchMock.mock.calls) {
-      const opts = call[1] as RequestInit & {
-        headers: Record<string, string>;
-      };
-      // The value comes from process.env.QF_CLIENT_SECRET; in test env it resolves to ""
-      expect(opts.headers).toHaveProperty("x-auth-token");
-      expect(opts.headers).toHaveProperty("x-client-id");
+      const opts = call[1] as RequestInit & { headers: Record<string, string> };
+      expect(opts.headers["x-auth-token"]).toBe("rt_abc");
     }
   });
 
   it("Test 2 — uses QF_REFLECT_BASE as the fetch URL prefix", async () => {
+    mockGetToken.mockResolvedValue({
+      access_token: "rt_xyz",
+      expires_in: 3600,
+    });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -74,22 +94,25 @@ describe("qfReflectFetch — direct API key auth", () => {
   });
 
   it("Test 3 — throws on non-2xx and calls logQfError", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 403,
+    mockGetToken.mockResolvedValue({
+      access_token: "rt_err",
+      expires_in: 3600,
     });
-
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
     mockCaptureError.mockResolvedValue({ status: 403, body: "Forbidden" });
     mockLogQfError.mockResolvedValue(undefined);
 
     await expect(
       qfReflectFetch("/quran-reflect/v1/posts/feed")
     ).rejects.toThrow("403");
-
     expect(mockLogQfError).toHaveBeenCalledTimes(1);
   });
 
   it("Test 4 — reflect fetch does NOT populate content token cache", async () => {
+    mockGetToken.mockResolvedValue({
+      access_token: "rt_only",
+      expires_in: 3600,
+    });
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -99,5 +122,10 @@ describe("qfReflectFetch — direct API key auth", () => {
     await qfReflectFetch("/quran-reflect/v1/posts/feed");
 
     expect(getContentTokenCached()).toBeNull();
+  });
+
+  it("Test 5 — getReflectTokenCached returns null when expired", () => {
+    setReflectToken("old-token", -1);
+    expect(getReflectTokenCached()).toBeNull();
   });
 });

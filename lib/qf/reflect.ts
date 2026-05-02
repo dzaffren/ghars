@@ -30,7 +30,7 @@ export interface AyahQuestion {
 function isValidReflectPost(p: Record<string, unknown>): boolean {
   return (
     p.verified === true &&
-    p.languageName === "English" &&
+    (p.languageName as string)?.toLowerCase() === "english" &&
     p.moderationStatus === "APPROVED" &&
     p.draft !== true &&
     p.hidden !== true &&
@@ -93,7 +93,7 @@ export async function listReflectPostsForAyah(
     `?filter[references][0][chapterId]=${chapterId}` +
     `&filter[references][0][from]=${ayah}` +
     `&filter[references][0][to]=${ayah}` +
-    `&filter[verified]=true` +
+    `&filter[verifiedOnly]=true` +
     `&filter[languages]=en` +
     `&sort=featured` +
     `&limit=${limit}`;
