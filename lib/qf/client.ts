@@ -34,6 +34,9 @@ async function ensureContentToken(): Promise<string> {
   return access_token;
 }
 
+// Exported only for debug scripts — do not use in route handlers or components.
+export const ensureContentTokenForDebug = ensureContentToken;
+
 export async function qfContentFetch(path: string, revalidate = 86400) {
   const token = await ensureContentToken();
   const res = await fetch(`${QF_CONTENT_BASE}${path}`, {
@@ -49,10 +52,34 @@ export async function qfContentFetch(path: string, revalidate = 86400) {
   return res.json();
 }
 
-// Reflect gateway uses the same content token (scope: content) as the
-// verses/tafsir/audio endpoints — no separate scope or token mint needed.
+let _reflectToken: string | null = null;
+let _reflectTokenExpiry = 0;
+
+export function setReflectToken(token: string, expiresInSeconds: number) {
+  _reflectToken = token;
+  _reflectTokenExpiry = Date.now() + expiresInSeconds * 1000;
+}
+
+export function getReflectTokenCached(): string | null {
+  return _reflectToken && Date.now() < _reflectTokenExpiry - 60_000
+    ? _reflectToken
+    : null;
+}
+
+async function ensureReflectToken(): Promise<string> {
+  const cached = getReflectTokenCached();
+  if (cached) return cached;
+  const { getClientCredentialsToken } = await import("./oauth");
+  const { access_token, expires_in } =
+    await getClientCredentialsToken("post.read");
+  setReflectToken(access_token, expires_in);
+  return access_token;
+}
+
+// Reflect gateway (apis.quran.foundation/quran-reflect) requires post.read scope —
+// separate from the content scope used by api.quran.com/api/v4.
 export async function qfReflectFetch(path: string, revalidate = 3600) {
-  const token = await ensureContentToken();
+  const token = await ensureReflectToken();
   const res = await fetch(`${QF_REFLECT_BASE}${path}`, {
     headers: { "x-auth-token": token, "x-client-id": QF_CLIENT_ID },
     next: { revalidate },
