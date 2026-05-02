@@ -6,6 +6,59 @@ import Image from "next/image";
 import { Home, BookOpen, Settings } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
+// Sparkle particles orbiting the centre button
+const SPARKLES = [
+  { id: 0, size: 4, orbit: 30, startAngle: 0, duration: 3.2 },
+  { id: 1, size: 3, orbit: 34, startAngle: 120, duration: 2.8 },
+  { id: 2, size: 5, orbit: 28, startAngle: 240, duration: 3.6 },
+  { id: 3, size: 3, orbit: 36, startAngle: 60, duration: 4.0 },
+  { id: 4, size: 4, orbit: 32, startAngle: 200, duration: 2.6 },
+];
+
+function SparkleRing({ active }: { active: boolean }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion || !active) return null;
+  return (
+    <>
+      {SPARKLES.map((s) => (
+        <motion.div
+          key={s.id}
+          className="absolute pointer-events-none"
+          style={{
+            width: s.size,
+            height: s.size,
+            borderRadius: "50%",
+            backgroundColor: "rgba(45,106,79,0.5)",
+            top: "50%",
+            left: "50%",
+            marginTop: -s.size / 2,
+            marginLeft: -s.size / 2,
+          }}
+          animate={{
+            x: [
+              Math.cos((s.startAngle * Math.PI) / 180) * s.orbit,
+              Math.cos(((s.startAngle + 180) * Math.PI) / 180) * s.orbit,
+              Math.cos((s.startAngle * Math.PI) / 180) * s.orbit,
+            ],
+            y: [
+              Math.sin((s.startAngle * Math.PI) / 180) * s.orbit,
+              Math.sin(((s.startAngle + 180) * Math.PI) / 180) * s.orbit,
+              Math.sin((s.startAngle * Math.PI) / 180) * s.orbit,
+            ],
+            opacity: [0.8, 0.3, 0.8],
+            scale: [1, 0.5, 1],
+          }}
+          transition={{
+            duration: s.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
 const TABS = [
   { href: "/today", icon: Home, label: "Today" },
   { href: "/journal", icon: BookOpen, label: "Journal" },
@@ -182,7 +235,7 @@ export function RadialNav() {
               pulse ? { duration: 2.2, ease: "easeInOut" } : { duration: 0.2 }
             }
             className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full
-              bg-[#faf7f0] border shadow-[0_6px_22px_-6px_rgba(45,106,79,0.35)]
+              bg-[#faf7f0] border shadow-[0_6px_22px_-6px_rgba(45,106,79,0.35)] overflow-visible
               ${
                 open
                   ? "border-primary/50 shadow-[0_6px_26px_-4px_rgba(45,106,79,0.45)]"
@@ -191,12 +244,13 @@ export function RadialNav() {
             aria-label={open ? "Close menu" : "Open navigation"}
             aria-expanded={open}
           >
+            <SparkleRing active={!open} />
             <Image
               src="/logo.png"
               alt="Ghars"
               width={30}
               height={30}
-              className="select-none"
+              className="select-none relative z-10"
             />
           </motion.button>
         </div>

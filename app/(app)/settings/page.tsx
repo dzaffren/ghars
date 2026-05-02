@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BookOpen, Clock, LogOut, Moon, Pause, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 const TRANSLATIONS = [
   { id: "131", label: "The Clear Quran (Mustafa Khattab)" },
@@ -29,17 +29,26 @@ function SettingRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
+    <div className="flex items-center justify-between gap-4 py-3.5">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
-          <Icon size={15} className="text-primary" />
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: "rgba(45,106,79,0.08)" }}
+        >
+          <Icon size={15} style={{ color: "var(--grove-green-light)" }} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground leading-tight">
+          <p
+            className="text-sm font-medium leading-tight"
+            style={{ color: "#1a3a2a" }}
+          >
             {label}
           </p>
           {description && (
-            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+            <p
+              className="text-xs mt-0.5 leading-tight"
+              style={{ color: "var(--text-muted)" }}
+            >
               {description}
             </p>
           )}
@@ -62,12 +71,17 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="relative h-6 w-11 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      style={{ backgroundColor: checked ? "var(--primary)" : "#d1d5db" }}
+      className="relative h-6 w-11 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      style={{
+        backgroundColor: checked ? "var(--grove-green-light)" : "#d1d5db",
+        // @ts-expect-error CSS custom property
+        "--tw-ring-color": "var(--grove-green-light)",
+      }}
     >
-      <span
-        className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-        style={{ transform: checked ? "translateX(20px)" : "translateX(0)" }}
+      <motion.span
+        className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
+        animate={{ x: checked ? 20 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 35 }}
       />
     </button>
   );
@@ -87,12 +101,27 @@ function TimeInput({
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-lg border-0 bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none ring-0 focus:ring-2 focus:ring-ring cursor-pointer text-center"
-      style={{ minWidth: "5.5rem" }}
+      className="rounded-xl border-0 px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 cursor-pointer text-center transition-shadow"
+      style={{
+        backgroundColor: "rgba(45,106,79,0.06)",
+        color: "var(--grove-green)",
+        minWidth: "5.5rem",
+        // @ts-expect-error CSS custom property
+        "--tw-ring-color": "var(--grove-green-light)",
+      }}
       data-testid={testId}
     />
   );
 }
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.3, ease: "easeOut" as const },
+  }),
+};
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
@@ -160,156 +189,288 @@ export default function SettingsPage() {
     window.location.href = "/";
   }
 
+  const sections = [
+    "profile",
+    "reminders",
+    "reading",
+    ...(notifPermission !== "granted" ? ["notifications"] : []),
+  ];
+
   return (
-    <main className="min-h-screen p-6 pb-28 bg-background">
-      <div className="max-w-sm mx-auto flex flex-col gap-5">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage your reminders and preferences
-          </p>
-        </div>
+    <main
+      className="min-h-screen pb-28"
+      style={{ backgroundColor: "var(--sand)" }}
+    >
+      {/* Header */}
+      <div
+        className="sticky top-0 z-10 px-5 pt-12 pb-4 backdrop-blur-sm"
+        style={{ backgroundColor: "rgba(245,240,232,0.9)" }}
+      >
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{ color: "#1a3a2a" }}
+        >
+          Settings
+        </h1>
+        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+          Preferences & reminders
+        </p>
+      </div>
 
+      <div className="px-5 flex flex-col gap-4 max-w-sm mx-auto">
         {/* Profile */}
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-base">Profile</CardTitle>
-            <CardDescription>How you appear on the home screen</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingRow
-              icon={User}
-              label="Your name"
-              description="Used in the greeting"
-            >
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. Ahmad"
-                maxLength={80}
-                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none focus:ring-2 focus:ring-ring text-right"
-                style={{ maxWidth: "9rem" }}
-                data-testid="settings-display-name"
-              />
-            </SettingRow>
-          </CardContent>
-        </Card>
-
-        {/* Reminders */}
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-base">Reminders</CardTitle>
-            <CardDescription>
-              When to receive your daily notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="divide-y divide-border">
-            <SettingRow
-              icon={Clock}
-              label="Morning reminder"
-              description="Daily ayah notification"
-            >
-              <TimeInput
-                value={morningTime}
-                onChange={setMorningTime}
-                testId="settings-morning-time"
-              />
-            </SettingRow>
-            <SettingRow
-              icon={Moon}
-              label="Evening reminder"
-              description="Reflection prompt"
-            >
-              <TimeInput
-                value={eveningTime}
-                onChange={setEveningTime}
-                testId="settings-evening-time"
-              />
-            </SettingRow>
-            <SettingRow
-              icon={Pause}
-              label="Pause all notifications"
-              description="Silence reminders temporarily"
-            >
-              <Toggle checked={paused} onChange={setPaused} />
-            </SettingRow>
-          </CardContent>
-        </Card>
-
-        {/* Reading */}
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-base">Reading</CardTitle>
-            <CardDescription>Quran translation preference</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingRow icon={BookOpen} label="Translation">
-              <select
-                value={translationId}
-                onChange={(e) => setTranslationId(e.target.value)}
-                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-                style={{ maxWidth: "10rem" }}
-                data-testid="settings-translation"
+        <motion.div
+          custom={0}
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card
+            className="border-0 shadow-sm"
+            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
+          >
+            <CardHeader className="pb-0 pt-4 px-4">
+              <CardTitle
+                className="text-sm font-semibold"
+                style={{ color: "var(--grove-green)" }}
               >
-                {TRANSLATIONS.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </SettingRow>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        {notifPermission !== "granted" && (
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle className="text-base">Push notifications</CardTitle>
-              <CardDescription>
-                {notifPermission === "denied"
-                  ? "Notifications are blocked in your browser settings."
-                  : "Enable browser push notifications to receive reminders."}
+                Profile
+              </CardTitle>
+              <CardDescription className="text-xs">
+                How you appear on the home screen
               </CardDescription>
             </CardHeader>
-            {notifPermission !== "denied" && (
-              <CardContent>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={enableNotifications}
-                  data-testid="enable-notifications-btn"
-                >
-                  <Bell size={15} />
-                  Enable push notifications
-                </Button>
-              </CardContent>
-            )}
+            <CardContent className="px-4 pb-2">
+              <SettingRow
+                icon={User}
+                label="Your name"
+                description="Used in the greeting"
+              >
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. Ahmad"
+                  maxLength={80}
+                  className="rounded-xl border border-transparent px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 text-right transition-shadow"
+                  style={{
+                    backgroundColor: "rgba(45,106,79,0.06)",
+                    color: "var(--grove-green)",
+                    maxWidth: "9rem",
+                  }}
+                  data-testid="settings-display-name"
+                />
+              </SettingRow>
+            </CardContent>
           </Card>
-        )}
+        </motion.div>
+
+        {/* Reminders */}
+        <motion.div
+          custom={1}
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card
+            className="border-0 shadow-sm"
+            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
+          >
+            <CardHeader className="pb-0 pt-4 px-4">
+              <CardTitle
+                className="text-sm font-semibold"
+                style={{ color: "var(--grove-green)" }}
+              >
+                Reminders
+              </CardTitle>
+              <CardDescription className="text-xs">
+                When to receive your daily notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent
+              className="px-4 pb-2 divide-y"
+              style={{ borderColor: "rgba(45,106,79,0.08)" }}
+            >
+              <SettingRow
+                icon={Clock}
+                label="Morning reminder"
+                description="Daily ayah notification"
+              >
+                <TimeInput
+                  value={morningTime}
+                  onChange={setMorningTime}
+                  testId="settings-morning-time"
+                />
+              </SettingRow>
+              <SettingRow
+                icon={Moon}
+                label="Evening reminder"
+                description="Reflection prompt"
+              >
+                <TimeInput
+                  value={eveningTime}
+                  onChange={setEveningTime}
+                  testId="settings-evening-time"
+                />
+              </SettingRow>
+              <SettingRow
+                icon={Pause}
+                label="Pause notifications"
+                description="Silence reminders temporarily"
+              >
+                <Toggle checked={paused} onChange={setPaused} />
+              </SettingRow>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Reading */}
+        <motion.div
+          custom={2}
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card
+            className="border-0 shadow-sm"
+            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
+          >
+            <CardHeader className="pb-0 pt-4 px-4">
+              <CardTitle
+                className="text-sm font-semibold"
+                style={{ color: "var(--grove-green)" }}
+              >
+                Reading
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Quran translation preference
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 pb-2">
+              <SettingRow icon={BookOpen} label="Translation">
+                <select
+                  value={translationId}
+                  onChange={(e) => setTranslationId(e.target.value)}
+                  className="rounded-xl border-0 px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 cursor-pointer transition-shadow"
+                  style={{
+                    backgroundColor: "rgba(45,106,79,0.06)",
+                    color: "var(--grove-green)",
+                    maxWidth: "10rem",
+                  }}
+                  data-testid="settings-translation"
+                >
+                  {TRANSLATIONS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </SettingRow>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Push notifications */}
+        <AnimatePresence>
+          {notifPermission !== "granted" && (
+            <motion.div
+              key="notifications"
+              custom={3}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, scale: 0.97 }}
+            >
+              <Card
+                className="border-0 shadow-sm"
+                style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
+              >
+                <CardHeader className="pb-0 pt-4 px-4">
+                  <CardTitle
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--grove-green)" }}
+                  >
+                    Push notifications
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {notifPermission === "denied"
+                      ? "Notifications are blocked in your browser settings."
+                      : "Enable reminders so you never miss a reflection."}
+                  </CardDescription>
+                </CardHeader>
+                {notifPermission !== "denied" && (
+                  <CardContent className="px-4 pb-4 pt-2">
+                    <button
+                      onClick={enableNotifications}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-opacity active:opacity-75"
+                      style={{
+                        backgroundColor: "rgba(45,106,79,0.08)",
+                        color: "var(--grove-green)",
+                        border: "1px solid rgba(45,106,79,0.15)",
+                      }}
+                      data-testid="enable-notifications-btn"
+                    >
+                      <Bell size={14} />
+                      Enable push notifications
+                    </button>
+                  </CardContent>
+                )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Save */}
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={saveSettings}
-          disabled={saving}
-          data-testid="save-settings-btn"
+        <motion.div
+          custom={sections.length}
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
         >
-          {saving ? "Saving…" : saved ? "Saved ✓" : "Save settings"}
-        </Button>
+          <motion.button
+            onClick={saveSettings}
+            disabled={saving}
+            whileTap={{ scale: 0.97 }}
+            className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+            style={{
+              background: saved
+                ? "#388e3c"
+                : "linear-gradient(135deg, var(--grove-green) 0%, var(--grove-green-light) 100%)",
+              boxShadow: "0 4px 16px -4px rgba(45,106,79,0.4)",
+            }}
+            data-testid="save-settings-btn"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={saving ? "saving" : saved ? "saved" : "idle"}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+              >
+                {saving ? "Saving…" : saved ? "Saved ✓" : "Save settings"}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+        </motion.div>
 
         {/* Sign out */}
-        <Button
-          variant="ghost"
-          className="w-full text-muted-foreground"
-          onClick={signOut}
-          data-testid="sign-out-btn"
+        <motion.div
+          custom={sections.length + 1}
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
         >
-          <LogOut size={15} />
-          Sign out
-        </Button>
+          <button
+            onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-xl transition-colors"
+            style={{ color: "var(--text-muted)" }}
+            data-testid="sign-out-btn"
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
+        </motion.div>
       </div>
     </main>
   );
