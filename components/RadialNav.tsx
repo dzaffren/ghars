@@ -60,15 +60,14 @@ function SparkleRing({ active }: { active: boolean }) {
 }
 
 const TABS = [
-  // Degrees sweep upward from the button centre.
-  // 60° = upper-right (Settings), 90° = straight up (Today/Home), 120° = upper-left (Journal)
-  // We assign left→right: Journal (120°), Today (90°), Settings (60°)
-  { href: "/journal", icon: BookOpen, label: "Journal", deg: 120 },
+  // Wider spread: 45° / 90° / 135° for a balanced semicircle
+  // Journal upper-left, Today straight up, Settings upper-right
+  { href: "/journal", icon: BookOpen, label: "Journal", deg: 135 },
   { href: "/today", icon: Home, label: "Today", deg: 90 },
-  { href: "/settings", icon: Settings, label: "Settings", deg: 60 },
+  { href: "/settings", icon: Settings, label: "Settings", deg: 45 },
 ] as const;
 
-const RADIUS = 110;
+const RADIUS = 120;
 const HIDE_ON = ["/", "/onboarding", "/callback"];
 const SEEN_KEY = "ghars_radial_seen";
 
@@ -197,21 +196,23 @@ export function RadialNav() {
 
         {/* Centre button + arching GHARS label */}
         <div className="relative flex items-center justify-center">
-          {/* Arching "GHARS" text — tighter arc, bigger font */}
+          {/* Arching "GHARS" text — overlaid on top half of button */}
           <svg
-            width="72"
-            height="36"
-            viewBox="0 0 72 36"
-            className="absolute bottom-full mb-[-4px] pointer-events-none select-none"
+            width="64"
+            height="28"
+            viewBox="0 0 64 28"
+            className="absolute bottom-[44px] left-1/2 pointer-events-none select-none"
+            style={{ transform: "translateX(-50%)" }}
             aria-hidden="true"
           >
             <defs>
-              <path id="arch" d="M 6,32 A 30,30 0 0,1 66,32" fill="none" />
+              {/* Arc baseline sits at y=28, radius 28 — text hugs just above button top */}
+              <path id="arch" d="M 4,28 A 28,28 0 0,1 60,28" fill="none" />
             </defs>
             <text
-              fontSize="11"
+              fontSize="10"
               fontWeight="700"
-              letterSpacing="3"
+              letterSpacing="2.8"
               fill="rgba(45,106,79,0.75)"
               fontFamily="inherit"
             >

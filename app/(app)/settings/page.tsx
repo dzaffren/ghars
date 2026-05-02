@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BookOpen, Clock, LogOut, Moon, Pause, User } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const TRANSLATIONS = [
   { id: "131", label: "The Clear Quran (Mustafa Khattab)" },
@@ -17,7 +10,35 @@ const TRANSLATIONS = [
   { id: "20", label: "Pickthall" },
 ];
 
-function SettingRow({
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p
+        className="text-xs font-semibold uppercase tracking-widest mb-2 px-1"
+        style={{ color: "var(--grove-green-light)", opacity: 0.7 }}
+      >
+        {title}
+      </p>
+      <div
+        className="rounded-2xl overflow-hidden divide-y divide-[rgba(45,106,79,0.06)]"
+        style={{
+          backgroundColor: "rgba(255,255,255,0.7)",
+          border: "1px solid rgba(45,106,79,0.08)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Row({
   icon: Icon,
   label,
   description,
@@ -29,24 +50,16 @@ function SettingRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3.5">
+    <div className="flex items-center justify-between gap-3 px-4 py-3.5">
       <div className="flex items-center gap-3 min-w-0">
-        <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: "rgba(45,106,79,0.08)" }}
-        >
-          <Icon size={15} style={{ color: "var(--grove-green-light)" }} />
-        </div>
+        <Icon size={15} style={{ color: "var(--grove-green-light)" }} />
         <div className="min-w-0">
-          <p
-            className="text-sm font-medium leading-tight"
-            style={{ color: "#1a3a2a" }}
-          >
+          <p className="text-sm font-medium" style={{ color: "#1a3a2a" }}>
             {label}
           </p>
           {description && (
             <p
-              className="text-xs mt-0.5 leading-tight"
+              className="text-xs mt-0.5"
               style={{ color: "var(--text-muted)" }}
             >
               {description}
@@ -71,15 +84,13 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="relative h-6 w-11 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      className="relative h-[26px] w-[46px] rounded-full transition-colors duration-200 focus-visible:outline-none"
       style={{
         backgroundColor: checked ? "var(--grove-green-light)" : "#d1d5db",
-        // @ts-expect-error CSS custom property
-        "--tw-ring-color": "var(--grove-green-light)",
       }}
     >
       <motion.span
-        className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
+        className="absolute top-[3px] left-[3px] h-5 w-5 rounded-full bg-white shadow-sm"
         animate={{ x: checked ? 20 : 0 }}
         transition={{ type: "spring", stiffness: 500, damping: 35 }}
       />
@@ -101,27 +112,16 @@ function TimeInput({
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-xl border-0 px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 cursor-pointer text-center transition-shadow"
+      className="rounded-lg px-3 py-1.5 text-sm font-medium outline-none text-center border-0"
       style={{
-        backgroundColor: "rgba(45,106,79,0.06)",
+        backgroundColor: "rgba(45,106,79,0.07)",
         color: "var(--grove-green)",
         minWidth: "5.5rem",
-        // @ts-expect-error CSS custom property
-        "--tw-ring-color": "var(--grove-green-light)",
       }}
       data-testid={testId}
     />
   );
 }
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.06, duration: 0.3, ease: "easeOut" as const },
-  }),
-};
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
@@ -189,288 +189,165 @@ export default function SettingsPage() {
     window.location.href = "/";
   }
 
-  const sections = [
-    "profile",
-    "reminders",
-    "reading",
-    ...(notifPermission !== "granted" ? ["notifications"] : []),
-  ];
-
   return (
     <main
-      className="min-h-screen pb-28"
+      className="min-h-screen pb-32"
       style={{ backgroundColor: "var(--sand)" }}
     >
       {/* Header */}
-      <div
-        className="sticky top-0 z-10 px-5 pt-12 pb-4 backdrop-blur-sm"
-        style={{ backgroundColor: "rgba(245,240,232,0.9)" }}
-      >
-        <h1
-          className="text-2xl font-bold tracking-tight"
-          style={{ color: "#1a3a2a" }}
-        >
+      <div className="px-5 pt-14 pb-6">
+        <h1 className="text-xl font-semibold" style={{ color: "#1a3a2a" }}>
           Settings
         </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Preferences & reminders
+          Preferences &amp; reminders
         </p>
       </div>
 
-      <div className="px-5 flex flex-col gap-4 max-w-sm mx-auto">
+      <div className="px-5 flex flex-col gap-5 max-w-sm mx-auto">
         {/* Profile */}
-        <motion.div
-          custom={0}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card
-            className="border-0 shadow-sm"
-            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
+        <Section title="Profile">
+          <Row
+            icon={User}
+            label="Display name"
+            description="Shown in your greeting"
           >
-            <CardHeader className="pb-0 pt-4 px-4">
-              <CardTitle
-                className="text-sm font-semibold"
-                style={{ color: "var(--grove-green)" }}
-              >
-                Profile
-              </CardTitle>
-              <CardDescription className="text-xs">
-                How you appear on the home screen
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 pb-2">
-              <SettingRow
-                icon={User}
-                label="Your name"
-                description="Used in the greeting"
-              >
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="e.g. Ahmad"
-                  maxLength={80}
-                  className="rounded-xl border border-transparent px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 text-right transition-shadow"
-                  style={{
-                    backgroundColor: "rgba(45,106,79,0.06)",
-                    color: "var(--grove-green)",
-                    maxWidth: "9rem",
-                  }}
-                  data-testid="settings-display-name"
-                />
-              </SettingRow>
-            </CardContent>
-          </Card>
-        </motion.div>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+              maxLength={80}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium outline-none text-right border-0"
+              style={{
+                backgroundColor: "rgba(45,106,79,0.07)",
+                color: "var(--grove-green)",
+                maxWidth: "9rem",
+              }}
+              data-testid="settings-display-name"
+            />
+          </Row>
+        </Section>
 
         {/* Reminders */}
-        <motion.div
-          custom={1}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card
-            className="border-0 shadow-sm"
-            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
-          >
-            <CardHeader className="pb-0 pt-4 px-4">
-              <CardTitle
-                className="text-sm font-semibold"
-                style={{ color: "var(--grove-green)" }}
-              >
-                Reminders
-              </CardTitle>
-              <CardDescription className="text-xs">
-                When to receive your daily notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent
-              className="px-4 pb-2 divide-y"
-              style={{ borderColor: "rgba(45,106,79,0.08)" }}
-            >
-              <SettingRow
-                icon={Clock}
-                label="Morning reminder"
-                description="Daily ayah notification"
-              >
-                <TimeInput
-                  value={morningTime}
-                  onChange={setMorningTime}
-                  testId="settings-morning-time"
-                />
-              </SettingRow>
-              <SettingRow
-                icon={Moon}
-                label="Evening reminder"
-                description="Reflection prompt"
-              >
-                <TimeInput
-                  value={eveningTime}
-                  onChange={setEveningTime}
-                  testId="settings-evening-time"
-                />
-              </SettingRow>
-              <SettingRow
-                icon={Pause}
-                label="Pause notifications"
-                description="Silence reminders temporarily"
-              >
-                <Toggle checked={paused} onChange={setPaused} />
-              </SettingRow>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Section title="Reminders">
+          <Row icon={Clock} label="Morning" description="Daily ayah">
+            <TimeInput
+              value={morningTime}
+              onChange={setMorningTime}
+              testId="settings-morning-time"
+            />
+          </Row>
+          <Row icon={Moon} label="Evening" description="Reflection prompt">
+            <TimeInput
+              value={eveningTime}
+              onChange={setEveningTime}
+              testId="settings-evening-time"
+            />
+          </Row>
+          <Row icon={Pause} label="Pause notifications">
+            <Toggle checked={paused} onChange={setPaused} />
+          </Row>
+        </Section>
 
         {/* Reading */}
-        <motion.div
-          custom={2}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card
-            className="border-0 shadow-sm"
-            style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
-          >
-            <CardHeader className="pb-0 pt-4 px-4">
-              <CardTitle
-                className="text-sm font-semibold"
-                style={{ color: "var(--grove-green)" }}
-              >
-                Reading
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Quran translation preference
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 pb-2">
-              <SettingRow icon={BookOpen} label="Translation">
-                <select
-                  value={translationId}
-                  onChange={(e) => setTranslationId(e.target.value)}
-                  className="rounded-xl border-0 px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 cursor-pointer transition-shadow"
-                  style={{
-                    backgroundColor: "rgba(45,106,79,0.06)",
-                    color: "var(--grove-green)",
-                    maxWidth: "10rem",
-                  }}
-                  data-testid="settings-translation"
-                >
-                  {TRANSLATIONS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </SettingRow>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Section title="Reading">
+          <Row icon={BookOpen} label="Translation">
+            <select
+              value={translationId}
+              onChange={(e) => setTranslationId(e.target.value)}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium outline-none border-0 cursor-pointer"
+              style={{
+                backgroundColor: "rgba(45,106,79,0.07)",
+                color: "var(--grove-green)",
+                maxWidth: "10rem",
+              }}
+              data-testid="settings-translation"
+            >
+              {TRANSLATIONS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </Row>
+        </Section>
 
-        {/* Push notifications */}
+        {/* Notifications */}
         <AnimatePresence>
           {notifPermission !== "granted" && (
             <motion.div
-              key="notifications"
-              custom={3}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              exit={{ opacity: 0, scale: 0.97 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
             >
-              <Card
-                className="border-0 shadow-sm"
-                style={{ backgroundColor: "#fffcf7", borderRadius: "1rem" }}
-              >
-                <CardHeader className="pb-0 pt-4 px-4">
-                  <CardTitle
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--grove-green)" }}
-                  >
-                    Push notifications
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {notifPermission === "denied"
-                      ? "Notifications are blocked in your browser settings."
-                      : "Enable reminders so you never miss a reflection."}
-                  </CardDescription>
-                </CardHeader>
-                {notifPermission !== "denied" && (
-                  <CardContent className="px-4 pb-4 pt-2">
+              <Section title="Notifications">
+                <div className="px-4 py-3.5">
+                  {notifPermission === "denied" ? (
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Notifications are blocked in your browser settings.
+                    </p>
+                  ) : (
                     <button
                       onClick={enableNotifications}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-opacity active:opacity-75"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-opacity active:opacity-70"
                       style={{
-                        backgroundColor: "rgba(45,106,79,0.08)",
+                        backgroundColor: "rgba(45,106,79,0.07)",
                         color: "var(--grove-green)",
-                        border: "1px solid rgba(45,106,79,0.15)",
+                        border: "1px solid rgba(45,106,79,0.12)",
                       }}
                       data-testid="enable-notifications-btn"
                     >
                       <Bell size={14} />
                       Enable push notifications
                     </button>
-                  </CardContent>
-                )}
-              </Card>
+                  )}
+                </div>
+              </Section>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Save */}
-        <motion.div
-          custom={sections.length}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
+        <motion.button
+          onClick={saveSettings}
+          disabled={saving}
+          whileTap={{ scale: 0.98 }}
+          className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white disabled:opacity-60"
+          style={{
+            background: saved
+              ? "#388e3c"
+              : "linear-gradient(135deg, var(--grove-green) 0%, var(--grove-green-light) 100%)",
+            boxShadow: "0 4px 16px -4px rgba(45,106,79,0.35)",
+          }}
+          data-testid="save-settings-btn"
         >
-          <motion.button
-            onClick={saveSettings}
-            disabled={saving}
-            whileTap={{ scale: 0.97 }}
-            className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
-            style={{
-              background: saved
-                ? "#388e3c"
-                : "linear-gradient(135deg, var(--grove-green) 0%, var(--grove-green-light) 100%)",
-              boxShadow: "0 4px 16px -4px rgba(45,106,79,0.4)",
-            }}
-            data-testid="save-settings-btn"
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={saving ? "saving" : saved ? "saved" : "idle"}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.15 }}
-              >
-                {saving ? "Saving…" : saved ? "Saved ✓" : "Save settings"}
-              </motion.span>
-            </AnimatePresence>
-          </motion.button>
-        </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={saving ? "saving" : saved ? "saved" : "idle"}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+            >
+              {saving ? "Saving…" : saved ? "Saved ✓" : "Save settings"}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
 
         {/* Sign out */}
-        <motion.div
-          custom={sections.length + 1}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
+        <button
+          onClick={signOut}
+          className="w-full flex items-center justify-center gap-2 py-2 text-sm"
+          style={{ color: "var(--text-muted)" }}
+          data-testid="sign-out-btn"
         >
-          <button
-            onClick={signOut}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-xl transition-colors"
-            style={{ color: "var(--text-muted)" }}
-            data-testid="sign-out-btn"
-          >
-            <LogOut size={14} />
-            Sign out
-          </button>
-        </motion.div>
+          <LogOut size={14} />
+          Sign out
+        </button>
       </div>
     </main>
   );
