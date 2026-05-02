@@ -205,7 +205,11 @@ export function RadialNav() {
           className="pointer-events-none select-none"
           style={{
             position: "fixed",
-            bottom: 24 + BTN_SIZE - 2, // just above button top
+            // Button top sits at: 24 (bottom offset) + 56 (btn height) = 80px from screen bottom.
+            // SVG is 40 tall; we want the arc BASELINE (y=38 in viewBox) ~4px above button top.
+            // So the SVG's bottom edge = button top + 4 - (40 - 38) = 82. The arc peak sits
+            // ~13px higher, giving the letters a small comfortable breath from the button.
+            bottom: 24 + BTN_SIZE + 4,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 51,
