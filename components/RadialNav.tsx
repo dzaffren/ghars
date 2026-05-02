@@ -60,22 +60,15 @@ function SparkleRing({ active }: { active: boolean }) {
 }
 
 const TABS = [
-  { href: "/today", icon: Home, label: "Today" },
-  { href: "/journal", icon: BookOpen, label: "Journal" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+  // Degrees sweep upward from the button centre.
+  // 60° = upper-right (Settings), 90° = straight up (Today/Home), 120° = upper-left (Journal)
+  // We assign left→right: Journal (120°), Today (90°), Settings (60°)
+  { href: "/journal", icon: BookOpen, label: "Journal", deg: 120 },
+  { href: "/today", icon: Home, label: "Today", deg: 90 },
+  { href: "/settings", icon: Settings, label: "Settings", deg: 60 },
 ] as const;
 
-// Anchored bottom-right — orbit opens into the upper-left quadrant.
-// The math-angle convention (x = cos, y = -sin) used below means:
-//   90°  = straight up      (y = -R)
-//   100° = up + slightly right-of-vertical
-//   180° = straight left    (x = -R, y = 0)
-// Sweeping 100° → 180° keeps all items at y ≤ 0 (at or above the anchor
-// center), so nothing can clip below the viewport on short mobile screens
-// even with a home-indicator safe area.
-const START_DEG = 100;
-const END_DEG = 180;
-const RADIUS = 132;
+const RADIUS = 110;
 const HIDE_ON = ["/", "/onboarding", "/callback"];
 const SEEN_KEY = "ghars_radial_seen";
 
@@ -91,7 +84,6 @@ export function RadialNav() {
   const ref = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
-  // Close on outside click
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -102,12 +94,10 @@ export function RadialNav() {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
-  // Close when route changes
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // First-visit pulse: draws attention to the anchor for new users
   useEffect(() => {
     if (reduceMotion) return;
     try {
@@ -118,7 +108,7 @@ export function RadialNav() {
         return () => clearTimeout(t);
       }
     } catch {
-      // localStorage blocked in private mode / third-party context — skip
+      // localStorage blocked — skip
     }
   }, [reduceMotion]);
 
@@ -130,7 +120,7 @@ export function RadialNav() {
 
   return (
     <>
-      {/* Backdrop — full viewport, tap to close */}
+      {/* Backdrop */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -145,15 +135,18 @@ export function RadialNav() {
         )}
       </AnimatePresence>
 
-      <div ref={ref} className="fixed bottom-4 right-4 z-50">
+      {/* Centre — bottom-centre of screen */}
+      <div
+        ref={ref}
+        className="fixed bottom-6 left-1/2 z-50"
+        style={{ transform: "translateX(-50%)" }}
+      >
         {/* Orbit items */}
         <AnimatePresence>
           {open &&
-            TABS.map(({ href, icon: Icon, label }, i) => {
-              const t = TABS.length <= 1 ? 0 : i / (TABS.length - 1);
-              const deg = START_DEG + t * (END_DEG - START_DEG);
+            TABS.map(({ href, icon: Icon, label, deg }, i) => {
               const rad = degToRad(deg);
-              // In CSS: x right = positive, y down = positive → flip y
+              // CSS: x right = +, y down = + → flip y for upward arc
               const x = RADIUS * Math.cos(rad);
               const y = -RADIUS * Math.sin(rad);
               const isActive =
@@ -173,19 +166,21 @@ export function RadialNav() {
                   className={`group absolute flex items-center justify-center rounded-full transition-colors
                     ${
                       isActive
-                        ? "w-12 h-12 -ml-6 -mb-6 bg-primary text-white shadow-[0_0_20px_rgba(45,106,79,0.35)]"
-                        : "w-11 h-11 -ml-[22px] -mb-[22px] bg-[rgba(250,247,240,0.95)] border border-[var(--green-fog)] text-[var(--ink-soft)] shadow-[0_3px_12px_-3px_rgba(45,106,79,0.25)] hover:text-primary hover:scale-110"
+                        ? "w-12 h-12 -ml-6 -mb-6 text-white shadow-[0_0_20px_rgba(45,106,79,0.35)]"
+                        : "w-11 h-11 -ml-[22px] -mb-[22px] bg-[rgba(250,247,240,0.97)] border text-[#5b6b62] shadow-[0_3px_12px_-3px_rgba(45,106,79,0.25)] hover:scale-110"
                     }`}
+                  style={
+                    isActive
+                      ? { backgroundColor: "var(--grove-green-light)" }
+                      : { borderColor: "rgba(45,106,79,0.2)" }
+                  }
                   aria-label={label}
                 >
                   <Icon
                     size={isActive ? 18 : 16}
                     strokeWidth={isActive ? 2.2 : 1.8}
                   />
-                  {/* Label — placed above the icon so it doesn't get
-                      clipped by the viewport bottom (anchor sits at
-                      bottom-4). Visible on hover/focus, or always for
-                      the currently active route. */}
+                  {/* Label tooltip — above the icon */}
                   <span
                     className={`pointer-events-none absolute bottom-full mb-1.5 whitespace-nowrap rounded-full bg-[#1a3a2a] px-2 py-0.5 text-[9px] font-semibold text-white shadow-md transition-opacity ${
                       isActive
@@ -200,25 +195,24 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* Centre — button + arching app name */}
+        {/* Centre button + arching GHARS label */}
         <div className="relative flex items-center justify-center">
-          {/* Arching "Ghars" text above the button */}
+          {/* Arching "GHARS" text — tighter arc, bigger font */}
           <svg
-            width="80"
-            height="44"
-            viewBox="0 0 80 44"
-            className="absolute bottom-full mb-[-6px] pointer-events-none select-none"
+            width="72"
+            height="36"
+            viewBox="0 0 72 36"
+            className="absolute bottom-full mb-[-4px] pointer-events-none select-none"
             aria-hidden="true"
           >
             <defs>
-              {/* Arc path: semicircle across the top */}
-              <path id="arch" d="M 8,38 A 32,32 0 0,1 72,38" fill="none" />
+              <path id="arch" d="M 6,32 A 30,30 0 0,1 66,32" fill="none" />
             </defs>
             <text
-              fontSize="9"
-              fontWeight="600"
-              letterSpacing="2.5"
-              fill="rgba(45,106,79,0.7)"
+              fontSize="11"
+              fontWeight="700"
+              letterSpacing="3"
+              fill="rgba(45,106,79,0.75)"
               fontFamily="inherit"
             >
               <textPath href="#arch" startOffset="50%" textAnchor="middle">
