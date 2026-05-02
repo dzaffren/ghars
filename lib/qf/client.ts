@@ -4,9 +4,17 @@ const QF_CONTENT_BASE =
   process.env.QF_CONTENT_BASE ?? "https://api.quran.com/api/v4";
 const QF_USER_BASE =
   process.env.QF_USER_BASE ?? "https://apis.quran.foundation/auth/v1";
-// Quran Reflect gateway — community posts and scholar answers
-const QF_REFLECT_BASE =
-  process.env.QF_REFLECT_BASE ?? "https://apis.quran.foundation";
+// Quran Reflect gateway — derives host from QF_OAUTH_BASE so prelive/prod stay in sync.
+// prelive-oauth2.quran.foundation -> apis-prelive.quran.foundation
+// oauth2.quran.foundation         -> apis.quran.foundation
+function deriveReflectBase(): string {
+  if (process.env.QF_REFLECT_BASE) return process.env.QF_REFLECT_BASE;
+  const oauthBase = process.env.QF_OAUTH_BASE ?? "";
+  if (oauthBase.includes("prelive"))
+    return "https://apis-prelive.quran.foundation";
+  return "https://apis.quran.foundation";
+}
+const QF_REFLECT_BASE = deriveReflectBase();
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID ?? "";
 const QF_CLIENT_SECRET = process.env.QF_CLIENT_SECRET ?? "";
 const QF_TIMEOUT_MS = 10_000;
