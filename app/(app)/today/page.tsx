@@ -6,6 +6,7 @@ import { TafsirExtract } from "./_components/TafsirExtract";
 import { TafsirFullDrawer } from "./_components/TafsirFullDrawer";
 import { AudioPlayer } from "./_components/AudioPlayer";
 import { MissionCard } from "./_components/MissionCard";
+import { ReflectView } from "./reflect/ReflectView";
 
 interface TodayData {
   assignment_id: string;
@@ -164,13 +165,13 @@ export default function TodayPage() {
           committing={committing}
         />
         {committed && (
-          <p
-            className="text-center text-sm"
-            style={{ color: "var(--text-muted)" }}
-            data-testid="evening-cue"
-          >
-            Come back this evening to reflect on how it went.
-          </p>
+          <ReflectView
+            missionId={data.mission!.mission_id}
+            missionText={data.mission!.selected_prompt}
+            verseKey={data.verse_key}
+            surahName={data.surah_name}
+            ayahNumber={data.ayah_number}
+          />
         )}
       </div>
     </main>
