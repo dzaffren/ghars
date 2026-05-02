@@ -61,7 +61,21 @@ describe("runProbe — proceed verdict when ≥15 usable", () => {
 
     vi.mocked(listReflectPostsForAyah).mockImplementation(async (verseKey) => {
       if (usableKeys.has(verseKey)) {
-        return { total: 1, posts: [{ id: 1, body: "<p>Steady.</p>" }] };
+        return {
+          total: 1,
+          posts: [
+            {
+              id: 1,
+              body: "<p>Steady.</p>",
+              verified: true,
+              featuredAt: null,
+              moderationStatus: "APPROVED",
+              languageName: "English",
+              likesCount: 5,
+              commentsCount: 2,
+            },
+          ],
+        };
       }
       return { total: 0, posts: [] };
     });
@@ -109,7 +123,22 @@ describe("runProbe — pause verdict when <15 usable", () => {
       if (usableKeys.has(verseKey)) {
         return {
           total: 1,
-          questions: [{ id: 1, answers: [{ body: "An answer." }] }],
+          questions: [
+            {
+              id: "q1",
+              body: "Why does patience come before prayer?",
+              answers: [
+                {
+                  id: "a1",
+                  type: "TAFSIR" as const,
+                  body: "An answer.",
+                  status: "Published",
+                  language: "English",
+                  answeredBy: "Dr A",
+                },
+              ],
+            },
+          ],
         };
       }
       return { total: 0, questions: [] };
@@ -144,7 +173,16 @@ describe("runProbe — HTML stripping", () => {
     vi.mocked(listReflectPostsForAyah).mockResolvedValue({
       total: 1,
       posts: [
-        { id: 1, body: "<p>Steady, and asking.</p><script>alert(1)</script>" },
+        {
+          id: 1,
+          body: "<p>Steady, and asking.</p><script>alert(1)</script>",
+          verified: true,
+          featuredAt: null,
+          moderationStatus: "APPROVED",
+          languageName: "English",
+          likesCount: 3,
+          commentsCount: 1,
+        },
       ],
     });
     vi.mocked(listAyahAnswers).mockResolvedValue({ total: 0, questions: [] });
@@ -190,7 +228,18 @@ describe("runProbe — idempotent (second run overwrites first)", () => {
     // First run: 20/20 usable
     vi.mocked(listReflectPostsForAyah).mockResolvedValue({
       total: 1,
-      posts: [{ id: 1, body: "First run." }],
+      posts: [
+        {
+          id: 1,
+          body: "First run.",
+          verified: true,
+          featuredAt: null,
+          moderationStatus: "APPROVED",
+          languageName: "English",
+          likesCount: 1,
+          commentsCount: 0,
+        },
+      ],
     });
     vi.mocked(listAyahAnswers).mockResolvedValue({ total: 0, questions: [] });
     await runProbe({ shortlistPath, outputDir });

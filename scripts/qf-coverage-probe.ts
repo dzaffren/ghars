@@ -48,7 +48,7 @@ function truncate(s: string, maxLen = 200): string {
 }
 
 /** Escape a CSV field: wrap in quotes if it contains commas, quotes, or newlines. */
-function csvField(value: string | null | boolean): string {
+function csvField(value: string | number | null | boolean): string {
   if (value === null || value === undefined) return "";
   const s = String(value);
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
