@@ -4,6 +4,9 @@ const QF_CONTENT_BASE =
   process.env.QF_CONTENT_BASE ?? "https://api.quran.com/api/v4";
 const QF_USER_BASE =
   process.env.QF_USER_BASE ?? "https://apis.quran.foundation/auth/v1";
+// Quran Reflect gateway — community posts and scholar answers
+const QF_REFLECT_BASE =
+  process.env.QF_REFLECT_BASE ?? "https://apis.quran.foundation";
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID ?? "";
 const QF_TIMEOUT_MS = 10_000;
 
@@ -41,6 +44,46 @@ export async function qfContentFetch(path: string, revalidate = 86400) {
     const { status, body } = await captureResponseError(res);
     await logQfError({ endpoint: path, status, body });
     throw new Error(`QF content ${status}: ${path}`);
+  }
+  return res.json();
+}
+
+let _reflectToken: string | null = null;
+let _reflectTokenExpiry = 0;
+
+export function setReflectToken(token: string, expiresInSeconds: number) {
+  _reflectToken = token;
+  _reflectTokenExpiry = Date.now() + expiresInSeconds * 1000;
+}
+
+export function getReflectTokenCached(): string | null {
+  return _reflectToken && Date.now() < _reflectTokenExpiry - 60_000
+    ? _reflectToken
+    : null;
+}
+
+async function ensureReflectToken(): Promise<string> {
+  const cached = getReflectTokenCached();
+  if (cached) return cached;
+  const { getClientCredentialsToken } = await import("./oauth");
+  const { access_token, expires_in } = await getClientCredentialsToken(
+    "post.read comment.read"
+  );
+  setReflectToken(access_token, expires_in);
+  return access_token;
+}
+
+export async function qfReflectFetch(path: string, revalidate = 3600) {
+  const token = await ensureReflectToken();
+  const res = await fetch(`${QF_REFLECT_BASE}${path}`, {
+    headers: { "x-auth-token": token, "x-client-id": QF_CLIENT_ID },
+    next: { revalidate },
+    signal: AbortSignal.timeout(QF_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    const { status, body } = await captureResponseError(res);
+    await logQfError({ endpoint: path, status, body });
+    throw new Error(`QF reflect ${status}: ${path}`);
   }
   return res.json();
 }
