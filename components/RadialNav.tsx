@@ -195,36 +195,37 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* GHARS arch — tight curve above button, viewBox tall enough to fit the peak.
-            Geometry: r=38, chord=60 (endpoints at x=10 and x=70).
-            Peak rises 38 - sqrt(38² - 30²) = ~14.7px above baseline.
-            Baseline at y=42, so peak at y≈27.3 — all fits in 48-tall viewBox. */}
+        {/* GHARS arch — sits above button. Sized 96x56 so arc peak at y≈41 clears
+            letter heights without clipping. Render OVER backdrop with z-[100]. */}
         <svg
-          width="80"
-          height="48"
-          viewBox="0 0 80 48"
+          width="96"
+          height="56"
+          viewBox="0 0 96 56"
           className="pointer-events-none select-none"
           style={{
             position: "fixed",
             // Button top = 24 + 56 = 80 from screen bottom.
-            // Baseline y=42 is 6px from SVG bottom. Place SVG bottom 2px above button top
-            // so letters' baseline sits ~8px above the button edge, close but not touching.
+            // SVG bottom = 82 → 2px above button top. Letter baselines at y=50 = 6px
+            // into the SVG, so letter feet sit ~8px above button edge — close, not touching.
             bottom: 24 + BTN_SIZE + 2,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 51,
+            zIndex: 100,
+            overflow: "visible",
           }}
           aria-hidden="true"
         >
           <defs>
-            <path id="ghars-arch" d="M 10,42 A 38,38 0 0,1 70,42" fill="none" />
+            {/* r=44, chord=80 (endpoints x=8, x=88). Peak height = 44 - sqrt(44² - 40²) ≈ 25px */}
+            <path id="ghars-arch" d="M 8,50 A 44,44 0 0,1 88,50" fill="none" />
           </defs>
           <text
-            fontSize="10"
-            fontWeight="700"
+            fontSize="11"
+            fontWeight="800"
             letterSpacing="2.5"
-            fill="var(--grove-green)"
+            fill="#1a4731"
             fontFamily="inherit"
+            style={{ paintOrder: "stroke", stroke: "#faf7f0", strokeWidth: 2 }}
           >
             <textPath href="#ghars-arch" startOffset="50%" textAnchor="middle">
               GHARS
