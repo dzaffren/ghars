@@ -195,25 +195,25 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* GHARS arch — sits just above the button, no gap */}
+        {/* GHARS arch — fixed position just above the button */}
         <svg
           width="80"
-          height="30"
-          viewBox="0 0 80 30"
-          className="absolute pointer-events-none select-none"
+          height="32"
+          viewBox="0 0 80 32"
+          className="pointer-events-none select-none"
           style={{
-            bottom: BTN_SIZE - 2, // flush with button top
+            position: "fixed",
+            bottom: 24 + BTN_SIZE + 2, // screen bottom offset + button height + gap
             left: "50%",
             transform: "translateX(-50%)",
           }}
           aria-hidden="true"
         >
           <defs>
-            {/* Arc: starts at left edge, peaks at top-centre, ends at right edge */}
-            <path id="ghars-arch" d="M 4,30 A 36,36 0 0,1 76,30" fill="none" />
+            <path id="ghars-arch" d="M 4,32 A 36,36 0 0,1 76,32" fill="none" />
           </defs>
           <text
-            fontSize="10"
+            fontSize="11"
             fontWeight="700"
             letterSpacing="3"
             fill="rgba(45,106,79,0.75)"
