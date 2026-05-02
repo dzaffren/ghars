@@ -1,41 +1,52 @@
 import { qfUserFetch } from "./client";
 
+// POST /bookmarks — body: { verse_key }; returns { id } or { bookmark_id }
+// Scope: bookmark.create
 export async function addQFBookmark(
   accessToken: string,
-  verseKey: string
+  verseKey: string,
+  userId?: string
 ): Promise<string | null> {
-  // POST /bookmarks
+  const payload = { verse_key: verseKey };
   try {
     const data = await qfUserFetch("/bookmarks", accessToken, {
       method: "POST",
-      body: JSON.stringify({ verse_key: verseKey }),
+      body: JSON.stringify(payload),
+      userId,
+      payload,
     });
     return data.id ?? data.bookmark_id ?? null;
   } catch {
+    // qfUserFetch logged the failure.
     return null;
   }
 }
 
+// DELETE /bookmarks/{id}
+// Scope: bookmark.delete
 export async function removeQFBookmark(
   accessToken: string,
-  qfBookmarkId: string
+  qfBookmarkId: string,
+  userId?: string
 ): Promise<void> {
-  // DELETE /bookmarks/{id}
   try {
     await qfUserFetch(`/bookmarks/${qfBookmarkId}`, accessToken, {
       method: "DELETE",
+      userId,
     });
   } catch {
-    // Ignore — local mirror is canonical for display
+    // qfUserFetch logged the failure. Local mirror remains canonical for display.
   }
 }
 
+// GET /bookmarks — returns { bookmarks: [...] } or a bare array
+// Scope: bookmark.read
 export async function listQFBookmarks(
-  accessToken: string
+  accessToken: string,
+  userId?: string
 ): Promise<{ verse_key: string; id: string }[]> {
-  // GET /bookmarks
   try {
-    const data = await qfUserFetch("/bookmarks", accessToken);
+    const data = await qfUserFetch("/bookmarks", accessToken, { userId });
     return (data.bookmarks ?? data ?? []).map((b: Record<string, string>) => ({
       verse_key: b.verse_key ?? b.key,
       id: b.id,

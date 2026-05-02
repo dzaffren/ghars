@@ -1,8 +1,11 @@
+import { logQfError, captureResponseError } from "./errors";
+
 const QF_CONTENT_BASE =
   process.env.QF_CONTENT_BASE ?? "https://api.quran.com/api/v4";
 const QF_USER_BASE =
   process.env.QF_USER_BASE ?? "https://apis.quran.foundation/auth/v1";
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID ?? "";
+const QF_TIMEOUT_MS = 10_000;
 
 let _contentToken: string | null = null;
 let _contentTokenExpiry = 0;
@@ -32,25 +35,41 @@ export async function qfContentFetch(path: string, revalidate = 86400) {
   const res = await fetch(`${QF_CONTENT_BASE}${path}`, {
     headers: { "x-auth-token": token, "x-client-id": QF_CLIENT_ID },
     next: { revalidate },
+    signal: AbortSignal.timeout(QF_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`QF content ${res.status}: ${path}`);
+  if (!res.ok) {
+    const { status, body } = await captureResponseError(res);
+    await logQfError({ endpoint: path, status, body });
+    throw new Error(`QF content ${status}: ${path}`);
+  }
   return res.json();
+}
+
+export interface QfUserFetchOptions extends RequestInit {
+  userId?: string | null;
+  payload?: unknown;
 }
 
 export async function qfUserFetch(
   path: string,
   accessToken: string,
-  options?: RequestInit
+  options?: QfUserFetchOptions
 ) {
+  const { userId, payload, ...init } = options ?? {};
   const res = await fetch(`${QF_USER_BASE}${path}`, {
-    ...options,
+    ...init,
     headers: {
       "x-auth-token": accessToken,
       "x-client-id": QF_CLIENT_ID,
       "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
+      ...(init.headers ?? {}),
     },
+    signal: AbortSignal.timeout(QF_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`QF user ${res.status}: ${path}`);
+  if (!res.ok) {
+    const { status, body } = await captureResponseError(res);
+    await logQfError({ userId, endpoint: path, status, body, payload });
+    throw new Error(`QF user ${status}: ${path}`);
+  }
   return res.json();
 }

@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
   await addBookmark(session.userId, verse_key, reflection_id);
 
   // QF sync (best-effort)
-  const qfId = await addQFBookmark(session.accessToken, verse_key);
+  const qfId = await addQFBookmark(
+    session.accessToken,
+    verse_key,
+    session.userId
+  );
   if (qfId) {
     const supabase = createAdminSupabaseClient();
     await supabase
@@ -51,7 +55,11 @@ export async function DELETE(request: NextRequest) {
   await removeBookmark(session.userId, verse_key);
 
   if (data?.qf_bookmark_id) {
-    await removeQFBookmark(session.accessToken, data.qf_bookmark_id);
+    await removeQFBookmark(
+      session.accessToken,
+      data.qf_bookmark_id,
+      session.userId
+    );
   }
 
   return NextResponse.json({ ok: true });

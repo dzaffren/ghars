@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
   try {
     const noteResult = await addNote({
       accessToken: session.accessToken,
+      userId: session.userId,
       verseKey: da.verse_key,
       body: text,
     });
@@ -185,8 +186,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const today = reflection.submitted_at.slice(0, 10);
-    await addActivityDay({ accessToken: session.accessToken, date: today });
-    const streakResult = await getCurrentStreak(session.accessToken);
+    await addActivityDay({
+      accessToken: session.accessToken,
+      userId: session.userId,
+      date: today,
+    });
+    const streakResult = await getCurrentStreak(
+      session.accessToken,
+      session.userId
+    );
     streakDays = streakResult.current_streak_days;
   } catch {
     syncStatus = "retry_queued";
