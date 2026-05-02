@@ -1,12 +1,86 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf8;
-  --foreground: #1a1a18;
+  --background: #faf7f0;
+  --foreground: #1a1a1a;
   --grove-green: #1a4731;
   --grove-green-light: #2d6a4f;
   --sand: #f5f0e8;
   --text-muted: #6b7280;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #2d6a4f;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f5f2;
+  --secondary-foreground: #1a3a2a;
+  --muted: #f0f5f2;
+  --muted-foreground: #666666;
+  --accent: #52b788;
+  --accent-foreground: #1a3a2a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(82, 183, 136, 0.2);
+  --input: rgba(82, 183, 136, 0.2);
+  --ring: #2d6a4f;
+  --radius: 0.75rem;
+  --green-dark: #1a3a2a;
+  --green-mid: #2d6a4f;
+  --green-light: #52b788;
+  --cream: #faf7f0;
+  --amber: #d4a017;
+  --cream-deep: #f3ede0;
+  --cream-mist: rgba(250, 247, 240, 0.55);
+  --ink-soft: #5b6b62;
+  --green-fog: rgba(82, 183, 136, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 * {
@@ -15,4 +89,13 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+.arabic-text {
+  font-family:
+    var(--font-arabic), "Noto Naskh Arabic", "Scheherazade New",
+    "Traditional Arabic", serif;
+  direction: rtl;
+  line-height: 2.2;
+  font-size: 1.5rem;
 }
