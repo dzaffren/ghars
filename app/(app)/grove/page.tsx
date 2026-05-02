@@ -32,15 +32,19 @@ const TREE_EMOJI: Record<TreeVariant, string> = {
 export default function GrovePage() {
   const router = useRouter();
   const [data, setData] = useState<GroveData | null>(null);
+  const [weeks, setWeeks] = useState<{ id: number; week_number: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dayView, setDayView] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    fetch("/api/grove")
-      .then((r) => r.json())
-      .then((d) => {
-        setData(d);
+    Promise.all([
+      fetch("/api/grove").then((r) => r.json()),
+      fetch("/api/weeks").then((r) => r.json()),
+    ])
+      .then(([groveData, weeksData]) => {
+        setData(groveData);
+        setWeeks(weeksData.weeks ?? []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -100,6 +104,18 @@ export default function GrovePage() {
               🌱 {data.streak_days}-day streak
             </p>
           </div>
+        )}
+
+        {/* Weekly review card — show when weeks exist */}
+        {weeks.length > 0 && (
+          <button
+            onClick={() => router.push(`/week/${weeks[0].id}`)}
+            className="w-full py-3 px-5 rounded-xl text-sm font-medium text-left"
+            style={{ backgroundColor: "var(--grove-green)", color: "white" }}
+            data-testid="weekly-review-card"
+          >
+            Week {weeks[0].week_number} — see what Allah guided you through →
+          </button>
         )}
 
         {/* Grove canvas */}
