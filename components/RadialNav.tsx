@@ -195,19 +195,20 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* GHARS arch — hugs the curved top of the button.
-            Button is 56px diameter (r=28). Using r=32 for the text arc
-            gives a ~4px halo. The arc matches the button's curvature so
-            letters sit at uniform distance from the button edge. */}
+        {/* GHARS arch — tight curve above button, viewBox tall enough to fit the peak.
+            Geometry: r=38, chord=60 (endpoints at x=10 and x=70).
+            Peak rises 38 - sqrt(38² - 30²) = ~14.7px above baseline.
+            Baseline at y=42, so peak at y≈27.3 — all fits in 48-tall viewBox. */}
         <svg
           width="80"
-          height="32"
-          viewBox="0 0 80 32"
+          height="48"
+          viewBox="0 0 80 48"
           className="pointer-events-none select-none"
           style={{
             position: "fixed",
-            // Sit 2px above the button top. Button top = 24 + 56 = 80 from screen bottom.
-            // SVG bottom edge 2px higher than button top.
+            // Button top = 24 + 56 = 80 from screen bottom.
+            // Baseline y=42 is 6px from SVG bottom. Place SVG bottom 2px above button top
+            // so letters' baseline sits ~8px above the button edge, close but not touching.
             bottom: 24 + BTN_SIZE + 2,
             left: "50%",
             transform: "translateX(-50%)",
@@ -216,8 +217,7 @@ export function RadialNav() {
           aria-hidden="true"
         >
           <defs>
-            {/* Tight arc matching button curvature: r=32, chord ~64, peaks ~16px */}
-            <path id="ghars-arch" d="M 8,30 A 32,32 0 0,1 72,30" fill="none" />
+            <path id="ghars-arch" d="M 10,42 A 38,38 0 0,1 70,42" fill="none" />
           </defs>
           <text
             fontSize="10"
