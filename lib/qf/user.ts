@@ -17,7 +17,7 @@ export async function addNote(params: {
   verseKey: string;
   body: string;
 }): Promise<NoteResult> {
-  // POST /notes — [verify with live docs]
+  // POST /notes — body: { verse_key, body }; returns { id }
   const data = await qfUserFetch("/notes", params.accessToken, {
     method: "POST",
     body: JSON.stringify({ verse_key: params.verseKey, body: params.body }),
@@ -29,7 +29,7 @@ export async function addActivityDay(params: {
   accessToken: string;
   date: string; // YYYY-MM-DD
 }): Promise<ActivityResult> {
-  // POST /activity/day — [verify with live docs]
+  // POST /activity/day — body: { date: "YYYY-MM-DD", seconds_read: 60 }
   try {
     await qfUserFetch("/activity/day", params.accessToken, {
       method: "POST",
@@ -44,7 +44,7 @@ export async function addActivityDay(params: {
 export async function getCurrentStreak(
   accessToken: string
 ): Promise<StreakResult> {
-  // GET /streaks/current — [verify with live docs]
+  // GET /streaks/current
   try {
     const data = await qfUserFetch("/streaks/current", accessToken);
     return {

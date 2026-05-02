@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getReflectionById } from "@/lib/db/reflections";
 import { isBookmarked } from "@/lib/db/journal";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 export async function GET(
   _req: NextRequest,
@@ -17,7 +17,7 @@ export async function GET(
   if (!reflection)
     return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data: mission } = await supabase
     .from("missions")
     .select("daily_assignments(verse_key, user_id)")

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { addBookmark, removeBookmark } from "@/lib/db/journal";
 import { addQFBookmark, removeQFBookmark } from "@/lib/qf/bookmarks";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -18,9 +19,7 @@ export async function POST(request: NextRequest) {
   // QF sync (best-effort)
   const qfId = await addQFBookmark(session.accessToken, verse_key);
   if (qfId) {
-    const { createServerSupabaseClient } =
-      await import("@/lib/supabase/server");
-    const supabase = await createServerSupabaseClient();
+    const supabase = createAdminSupabaseClient();
     await supabase
       .from("bookmarks_mirror")
       .update({ qf_bookmark_id: qfId })
@@ -41,8 +40,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "MISSING_VERSE_KEY" }, { status: 400 });
 
   // Get QF bookmark ID before deleting mirror
-  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data } = await supabase
     .from("bookmarks_mirror")
     .select("qf_bookmark_id")

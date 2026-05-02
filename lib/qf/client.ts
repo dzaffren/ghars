@@ -1,6 +1,7 @@
 const QF_CONTENT_BASE =
   process.env.QF_CONTENT_BASE ?? "https://api.quran.com/api/v4";
-const QF_USER_BASE = process.env.QF_USER_BASE ?? "";
+const QF_USER_BASE =
+  process.env.QF_USER_BASE ?? "https://apis.quran.foundation/auth/v1";
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID ?? "";
 
 let _contentToken: string | null = null;
@@ -17,8 +18,17 @@ export function getContentTokenCached(): string | null {
     : null;
 }
 
+async function ensureContentToken(): Promise<string> {
+  const cached = getContentTokenCached();
+  if (cached) return cached;
+  const { getClientCredentialsToken } = await import("./oauth");
+  const { access_token, expires_in } = await getClientCredentialsToken();
+  setContentToken(access_token, expires_in);
+  return access_token;
+}
+
 export async function qfContentFetch(path: string, revalidate = 86400) {
-  const token = getContentTokenCached() ?? "";
+  const token = await ensureContentToken();
   const res = await fetch(`${QF_CONTENT_BASE}${path}`, {
     headers: { "x-auth-token": token, "x-client-id": QF_CLIENT_ID },
     next: { revalidate },

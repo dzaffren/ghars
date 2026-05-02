@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const VALID_TRANSLATIONS = ["131", "85", "20"];
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   if (typeof paused === "boolean") updates.paused = paused;
   if (tz) updates.tz = tz;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase
     .from("users")
     .update(updates)

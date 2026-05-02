@@ -27,15 +27,26 @@ export function buildAuthorizeUrl(params: {
   codeChallenge: string;
   scope?: string;
 }): string {
-  const url = new URL(`${QF_OAUTH_BASE}/oauth2/authorize`);
+  const url = new URL(`${QF_OAUTH_BASE}/oauth2/auth`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", QF_CLIENT_ID);
   url.searchParams.set("redirect_uri", params.redirectUri);
   url.searchParams.set("state", params.state);
   url.searchParams.set("code_challenge", params.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
-  url.searchParams.set("scope", params.scope ?? "openid profile email");
+  url.searchParams.set(
+    "scope",
+    params.scope ??
+      "openid offline_access user bookmark collection streak preference goal activity_day note"
+  );
   return url.toString();
+}
+
+function basicAuthHeader(): string {
+  return (
+    "Basic " +
+    Buffer.from(`${QF_CLIENT_ID}:${QF_CLIENT_SECRET}`).toString("base64")
+  );
 }
 
 // Exchange authorization code for tokens
@@ -51,15 +62,16 @@ export async function exchangeCodeForTokens(params: {
 }> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
-    client_id: QF_CLIENT_ID,
-    client_secret: QF_CLIENT_SECRET,
     code: params.code,
     redirect_uri: params.redirectUri,
     code_verifier: params.codeVerifier,
   });
   const res = await fetch(`${QF_OAUTH_BASE}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: basicAuthHeader(),
+    },
     body: body.toString(),
     cache: "no-store",
   });
@@ -78,13 +90,14 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 }> {
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    client_id: QF_CLIENT_ID,
-    client_secret: QF_CLIENT_SECRET,
     refresh_token: refreshToken,
   });
   const res = await fetch(`${QF_OAUTH_BASE}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: basicAuthHeader(),
+    },
     body: body.toString(),
     cache: "no-store",
   });
@@ -99,13 +112,14 @@ export async function getClientCredentialsToken(scope = "content"): Promise<{
 }> {
   const body = new URLSearchParams({
     grant_type: "client_credentials",
-    client_id: QF_CLIENT_ID,
-    client_secret: QF_CLIENT_SECRET,
     scope,
   });
   const res = await fetch(`${QF_OAUTH_BASE}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: basicAuthHeader(),
+    },
     body: body.toString(),
     cache: "no-store",
   });

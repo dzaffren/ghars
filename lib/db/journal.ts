@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 export interface JournalEntry {
   reflection_id: string;
@@ -16,7 +16,7 @@ export async function listJournal(params: {
   filterBookmarked: boolean;
   query?: string;
 }): Promise<{ entries: JournalEntry[]; total: number }> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { userId, page, pageSize, filterBookmarked, query } = params;
 
   const offset = (page - 1) * pageSize;
@@ -83,7 +83,7 @@ export async function addBookmark(
   verseKey: string,
   reflectionId?: string
 ): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   await supabase.from("bookmarks_mirror").upsert(
     {
       user_id: userId,
@@ -98,7 +98,7 @@ export async function removeBookmark(
   userId: string,
   verseKey: string
 ): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   await supabase
     .from("bookmarks_mirror")
     .delete()
@@ -110,7 +110,7 @@ export async function isBookmarked(
   userId: string,
   verseKey: string
 ): Promise<boolean> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { count } = await supabase
     .from("bookmarks_mirror")
     .select("id", { count: "exact", head: true })

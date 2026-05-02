@@ -23,8 +23,7 @@ export interface TafsirResult {
 
 // Get Uthmani Arabic text for a verse key (e.g. "96:1")
 export async function getVerseByKey(verseKey: string): Promise<VersePackage> {
-  // QF API: GET /verses/by_key/{verse_key}?fields=text_uthmani
-  // [verify with live docs] — path may differ
+  // QF API: GET /verses/by_key/{verse_key}?fields=...
   const data = await qfContentFetch(
     `/verses/by_key/${verseKey}?fields=text_uthmani,verse_key,verse_number`
   );
@@ -43,14 +42,14 @@ export async function getTranslation(
   verseKey: string,
   translationId = "131"
 ): Promise<TranslationResult> {
-  // QF API: GET /quran/translations/{id}?verse_key={key}
-  // [verify with live docs]
+  // QF API: GET /verses/by_key/{key}?translations={id}&fields=text_uthmani
   try {
     const data = await qfContentFetch(
-      `/quran/translations/${translationId}?verse_key=${verseKey}`
+      `/verses/by_key/${verseKey}?translations=${translationId}&fields=text_uthmani`
     );
-    const t = data.translations?.[0] ?? data.translation;
-    return { text: t?.text ?? t ?? "" };
+    const translations = data.verse?.translations ?? data.translations ?? [];
+    const t = translations[0];
+    return { text: t?.text ?? "" };
   } catch {
     return { text: "" };
   }
@@ -62,7 +61,6 @@ export async function getAudioUrl(
   reciterId = "7"
 ): Promise<AudioResult> {
   // QF API: GET /recitations/{recitation_id}/by_ayah/{verse_key}
-  // [verify with live docs]
   try {
     const data = await qfContentFetch(
       `/recitations/${reciterId}/by_ayah/${verseKey}`
@@ -82,8 +80,7 @@ export async function getFullTafsir(
   verseKey: string,
   tafsirId = "169"
 ): Promise<TafsirResult> {
-  // QF API: GET /quran/tafsirs/{tafsir_id}?verse_key={key}
-  // [verify with live docs] — tafsir_id 169 = Ibn Kathir English
+  // QF API: GET /quran/tafsirs/{tafsir_id}?verse_key={key} — tafsir_id 169 = Ibn Kathir English
   try {
     const data = await qfContentFetch(
       `/quran/tafsirs/${tafsirId}?verse_key=${verseKey}`

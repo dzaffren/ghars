@@ -6,5 +6,8 @@ CREATE TABLE IF NOT EXISTS push_dispatch_log (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   kind text NOT NULL CHECK (kind IN ('morning', 'evening')),
   sent_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, kind, sent_at::date)
+  sent_date date NOT NULL DEFAULT CURRENT_DATE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS push_dispatch_log_user_kind_day_uniq
+  ON push_dispatch_log (user_id, kind, sent_date);

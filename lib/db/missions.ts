@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 export interface CommitResult {
   mission_id: string;
@@ -50,7 +50,7 @@ export async function commitMission(params: {
     }
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   // Check if mission already exists
   const { data: existing } = await supabase

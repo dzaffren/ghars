@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 export interface WeekSummary {
   id: number;
@@ -22,7 +22,7 @@ export interface WeekDetail {
 }
 
 export async function listWeeks(userId: string): Promise<WeekSummary[]> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data } = await supabase
     .from("weekly_reviews")
     .select("id, week_number, completed_at")
@@ -35,7 +35,7 @@ export async function getWeekDetail(
   userId: string,
   weekId: number
 ): Promise<WeekDetail | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   const { data: review } = await supabase
     .from("weekly_reviews")

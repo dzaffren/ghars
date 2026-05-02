@@ -1,8 +1,8 @@
 -- Add constraints to reflections table (already created in 0001_initial.sql)
 ALTER TABLE reflections
-  ADD CONSTRAINT IF NOT EXISTS reflections_text_min_length CHECK (length(text) >= 40),
-  ADD CONSTRAINT IF NOT EXISTS reflections_text_max_length CHECK (length(text) <= 2000),
-  ADD CONSTRAINT IF NOT EXISTS reflections_did_apply_valid
+  ADD CONSTRAINT reflections_text_min_length CHECK (length(text) >= 40),
+  ADD CONSTRAINT reflections_text_max_length CHECK (length(text) <= 2000),
+  ADD CONSTRAINT reflections_did_apply_valid
     CHECK (did_apply IN ('yes_fully', 'partly', 'not_today'));
 
 CREATE UNIQUE INDEX IF NOT EXISTS reflections_mission_id_uniq ON reflections (mission_id);

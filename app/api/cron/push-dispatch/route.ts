@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { sendPush, type PushSubscription } from "@/lib/push";
 
 const WINDOW_MINUTES = 5;
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const now = new Date();
   const nowHHMM = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}`;
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         );
         await supabase
           .from("push_dispatch_log")
-          .insert({ user_id: user.id, kind });
+          .insert({ user_id: user.id, kind, sent_date: today });
         sent++;
       } catch (e: unknown) {
         // 410 Gone = stale subscription, delete it

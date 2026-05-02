@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import {
   getReflectionByMissionId,
   upsertReflection,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify mission belongs to this user
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data: mission } = await supabase
     .from("missions")
     .select(

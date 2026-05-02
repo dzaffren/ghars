@@ -4,7 +4,7 @@ export async function addQFBookmark(
   accessToken: string,
   verseKey: string
 ): Promise<string | null> {
-  // POST /bookmarks — [verify with live docs]
+  // POST /bookmarks
   try {
     const data = await qfUserFetch("/bookmarks", accessToken, {
       method: "POST",
@@ -20,7 +20,7 @@ export async function removeQFBookmark(
   accessToken: string,
   qfBookmarkId: string
 ): Promise<void> {
-  // DELETE /bookmarks/{id} — [verify with live docs]
+  // DELETE /bookmarks/{id}
   try {
     await qfUserFetch(`/bookmarks/${qfBookmarkId}`, accessToken, {
       method: "DELETE",
@@ -33,7 +33,7 @@ export async function removeQFBookmark(
 export async function listQFBookmarks(
   accessToken: string
 ): Promise<{ verse_key: string; id: string }[]> {
-  // GET /bookmarks — [verify with live docs]
+  // GET /bookmarks
   try {
     const data = await qfUserFetch("/bookmarks", accessToken);
     return (data.bookmarks ?? data ?? []).map((b: Record<string, string>) => ({

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 export interface ReflectionRow {
   id: string;
@@ -25,7 +25,7 @@ export function computeWindowClosesAt(commitAt: Date, userTz: string): Date {
 export async function getReflectionByMissionId(
   missionId: string
 ): Promise<ReflectionRow | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data } = await supabase
     .from("reflections")
     .select(
@@ -39,7 +39,7 @@ export async function getReflectionByMissionId(
 export async function getReflectionById(
   reflectionId: string
 ): Promise<ReflectionRow | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data } = await supabase
     .from("reflections")
     .select(
@@ -58,7 +58,7 @@ export async function upsertReflection(params: {
   existingId?: string;
   qfNoteId?: string;
 }): Promise<ReflectionRow> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   if (params.existingId) {
     const { data, error } = await supabase
@@ -99,7 +99,7 @@ export async function enqueueQfRetry(params: {
   statusCode?: number;
   errorBody?: string;
 }): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   await supabase.from("qf_api_errors").insert({
     user_id: params.userId,
     endpoint: params.endpoint,

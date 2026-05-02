@@ -133,3 +133,8 @@ create policy "bookmarks_self_all" on bookmarks_mirror for all using (true) with
 create policy "reviews_self_all" on weekly_reviews for all using (true) with check (true);
 create policy "push_self_all" on push_subscriptions for all using (true) with check (true);
 create policy "errors_self_all" on qf_api_errors for all using (true) with check (true);
+
+grant all on all tables in schema public to postgres, service_role;
+grant all on all sequences in schema public to postgres, service_role;
+alter default privileges in schema public grant all on tables to postgres, service_role;
+alter default privileges in schema public grant all on sequences to postgres, service_role;

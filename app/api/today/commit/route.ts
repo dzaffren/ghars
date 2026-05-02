@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { commitMission } from "@/lib/db/missions";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify assignment belongs to this user
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data: assignment } = await supabase
     .from("daily_assignments")
     .select("id, verse_key, corpus_entries(action_prompt_1, action_prompt_2)")

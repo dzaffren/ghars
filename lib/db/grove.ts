@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 export type TreeVariant = "full" | "partial" | "sapling" | "withered";
 
@@ -27,7 +27,7 @@ function treeVariant(didApply: string): TreeVariant {
 }
 
 export async function getGroveData(userId: string): Promise<GroveData> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   // Get today's date (UTC approximation — client sends local_date separately for precision)
   const today = new Date().toISOString().slice(0, 10);
@@ -139,7 +139,7 @@ export async function getGroveData(userId: string): Promise<GroveData> {
 }
 
 export async function getDayView(userId: string, localDate: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   const { data } = await supabase
     .from("daily_assignments")

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "../supabase/server";
+import { createAdminSupabaseClient } from "../supabase/server";
 
 // day_of_year: 1-366
 function dayOfYear(date: Date): number {
@@ -26,7 +26,7 @@ export async function resolveOrCreateAssignment(
   userId: string,
   localDate: string // YYYY-MM-DD
 ): Promise<Assignment | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   // Check if assignment already exists
   const { data: existing } = await supabase

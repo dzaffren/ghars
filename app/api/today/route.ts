@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { resolveOrCreateAssignment } from "@/lib/db/assignments";
 import { getVerseByKey, getTranslation, getAudioUrl } from "@/lib/qf/content";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     [verse, translation, audio] = await Promise.all([
       getVerseByKey(assignment.verse_key),
       (async () => {
-        const supabase = await createServerSupabaseClient();
+        const supabase = createAdminSupabaseClient();
         const { data: user } = await supabase
           .from("users")
           .select("translation_id")
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Get mission if committed
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data: mission } = await supabase
     .from("missions")
     .select("id, selected_prompt, is_custom, committed_at")

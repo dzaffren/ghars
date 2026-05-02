@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: session.userId,
@@ -38,7 +38,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
 
   const { endpoint } = await request.json();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   await supabase
     .from("push_subscriptions")
     .delete()

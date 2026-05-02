@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createServerSupabaseClient } from "./supabase/server";
+import { createAdminSupabaseClient } from "./supabase/server";
 
 const SESSION_COOKIE = "ghars_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -15,7 +15,7 @@ export async function getSession(): Promise<{
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionId) return null;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("qf_sessions")
     .select("id, user_id, access_token, refresh_token, access_expires_at")
@@ -39,7 +39,7 @@ export async function createSession(params: {
   refreshToken?: string;
   expiresIn: number;
 }): Promise<string> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   const expiresAt = new Date(Date.now() + params.expiresIn * 1000);
 
   const { data, error } = await supabase
@@ -73,7 +73,7 @@ export async function deleteSession(): Promise<void> {
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionId) return;
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
   await supabase.from("qf_sessions").delete().eq("id", sessionId);
 
   cookieStore.delete(SESSION_COOKIE);
