@@ -6,7 +6,6 @@ import Image from "next/image";
 import { Home, BookOpen, Settings } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
-// Sparkle particles orbiting the centre button
 const SPARKLES = [
   { id: 0, size: 4, orbit: 30, startAngle: 0, duration: 3.2 },
   { id: 1, size: 3, orbit: 34, startAngle: 120, duration: 2.8 },
@@ -23,11 +22,10 @@ function SparkleRing({ active }: { active: boolean }) {
       {SPARKLES.map((s) => (
         <motion.div
           key={s.id}
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none rounded-full"
           style={{
             width: s.size,
             height: s.size,
-            borderRadius: "50%",
             backgroundColor: "rgba(45,106,79,0.5)",
             top: "50%",
             left: "50%",
@@ -59,21 +57,17 @@ function SparkleRing({ active }: { active: boolean }) {
   );
 }
 
+// 3 tabs: Journal left (135°), Today top (90°), Settings right (45°)
 const TABS = [
-  // Wider spread: 45° / 90° / 135° for a balanced semicircle
-  // Journal upper-left, Today straight up, Settings upper-right
   { href: "/journal", icon: BookOpen, label: "Journal", deg: 135 },
   { href: "/today", icon: Home, label: "Today", deg: 90 },
   { href: "/settings", icon: Settings, label: "Settings", deg: 45 },
 ] as const;
 
-const RADIUS = 120;
+const RADIUS = 110; // distance from button centre to orbit item centre
+const BTN_SIZE = 56; // px — h-14 w-14
 const HIDE_ON = ["/", "/onboarding", "/callback"];
 const SEEN_KEY = "ghars_radial_seen";
-
-function degToRad(d: number) {
-  return (d * Math.PI) / 180;
-}
 
 export function RadialNav() {
   const pathname = usePathname();
@@ -107,23 +101,22 @@ export function RadialNav() {
         return () => clearTimeout(t);
       }
     } catch {
-      // localStorage blocked — skip
+      /* ignore */
     }
   }, [reduceMotion]);
 
   if (HIDE_ON.includes(pathname)) return null;
 
-  const transition = reduceMotion
+  const spring = reduceMotion
     ? { duration: 0 }
     : { type: "spring" as const, stiffness: 340, damping: 24 };
 
   return (
     <>
-      {/* Backdrop */}
       <AnimatePresence>
         {open && (
           <motion.div
-            key="radial-backdrop"
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -134,52 +127,60 @@ export function RadialNav() {
         )}
       </AnimatePresence>
 
-      {/* Centre — bottom-centre of screen */}
+      {/* Root: centred at bottom, sized exactly to the button */}
       <div
         ref={ref}
-        className="fixed bottom-6 left-1/2 z-50"
-        style={{ transform: "translateX(-50%)" }}
+        className="fixed z-50"
+        style={{
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: BTN_SIZE,
+          height: BTN_SIZE,
+        }}
       >
-        {/* Orbit items */}
+        {/* Orbit items — positioned via transform from button centre */}
         <AnimatePresence>
           {open &&
             TABS.map(({ href, icon: Icon, label, deg }, i) => {
-              const rad = degToRad(deg);
-              // CSS: x right = +, y down = + → flip y for upward arc
-              const x = RADIUS * Math.cos(rad);
-              const y = -RADIUS * Math.sin(rad);
+              const rad = (deg * Math.PI) / 180;
+              // Target offsets from button centre (CSS y-axis flipped)
+              const tx = RADIUS * Math.cos(rad);
+              const ty = -RADIUS * Math.sin(rad);
               const isActive =
                 pathname === href || pathname.startsWith(href + "/");
+              const size = isActive ? 48 : 44;
 
               return (
                 <motion.button
                   key={href}
                   initial={{ opacity: 0, x: 0, y: 0, scale: 0.4 }}
-                  animate={{ opacity: 1, x, y, scale: 1 }}
+                  animate={{ opacity: 1, x: tx, y: ty, scale: 1 }}
                   exit={{ opacity: 0, x: 0, y: 0, scale: 0.4 }}
-                  transition={{
-                    ...transition,
-                    delay: reduceMotion ? 0 : i * 0.04,
-                  }}
+                  transition={{ ...spring, delay: reduceMotion ? 0 : i * 0.04 }}
                   onClick={() => router.push(href)}
-                  className={`group absolute flex items-center justify-center rounded-full transition-colors
-                    ${
-                      isActive
-                        ? "w-12 h-12 -ml-6 -mb-6 text-white shadow-[0_0_20px_rgba(45,106,79,0.35)]"
-                        : "w-11 h-11 -ml-[22px] -mb-[22px] bg-[rgba(250,247,240,0.97)] border text-[#5b6b62] shadow-[0_3px_12px_-3px_rgba(45,106,79,0.25)] hover:scale-110"
-                    }`}
-                  style={
-                    isActive
-                      ? { backgroundColor: "var(--grove-green-light)" }
-                      : { borderColor: "rgba(45,106,79,0.2)" }
-                  }
+                  className="group absolute flex items-center justify-center rounded-full transition-colors"
+                  style={{
+                    width: size,
+                    height: size,
+                    // Centre the item on the button's centre point
+                    top: (BTN_SIZE - size) / 2,
+                    left: (BTN_SIZE - size) / 2,
+                    backgroundColor: isActive
+                      ? "var(--grove-green-light)"
+                      : "rgba(250,247,240,0.97)",
+                    color: isActive ? "#fff" : "#5b6b62",
+                    border: isActive ? "none" : "1px solid rgba(45,106,79,0.2)",
+                    boxShadow: isActive
+                      ? "0 0 20px rgba(45,106,79,0.35)"
+                      : "0 3px 12px -3px rgba(45,106,79,0.25)",
+                  }}
                   aria-label={label}
                 >
                   <Icon
                     size={isActive ? 18 : 16}
                     strokeWidth={isActive ? 2.2 : 1.8}
                   />
-                  {/* Label tooltip — above the icon */}
                   <span
                     className={`pointer-events-none absolute bottom-full mb-1.5 whitespace-nowrap rounded-full bg-[#1a3a2a] px-2 py-0.5 text-[9px] font-semibold text-white shadow-md transition-opacity ${
                       isActive
@@ -194,61 +195,67 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* Centre button + arching GHARS label */}
-        <div className="relative flex items-center justify-center">
-          {/* Arching "GHARS" text — overlaid on top half of button */}
-          <svg
-            width="64"
-            height="28"
-            viewBox="0 0 64 28"
-            className="absolute bottom-[44px] left-1/2 pointer-events-none select-none"
-            style={{ transform: "translateX(-50%)" }}
-            aria-hidden="true"
+        {/* GHARS arch — sits just above the button, no gap */}
+        <svg
+          width="80"
+          height="30"
+          viewBox="0 0 80 30"
+          className="absolute pointer-events-none select-none"
+          style={{
+            bottom: BTN_SIZE - 2, // flush with button top
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+          aria-hidden="true"
+        >
+          <defs>
+            {/* Arc: starts at left edge, peaks at top-centre, ends at right edge */}
+            <path id="ghars-arch" d="M 4,30 A 36,36 0 0,1 76,30" fill="none" />
+          </defs>
+          <text
+            fontSize="10"
+            fontWeight="700"
+            letterSpacing="3"
+            fill="rgba(45,106,79,0.75)"
+            fontFamily="inherit"
           >
-            <defs>
-              {/* Arc baseline sits at y=28, radius 28 — text hugs just above button top */}
-              <path id="arch" d="M 4,28 A 28,28 0 0,1 60,28" fill="none" />
-            </defs>
-            <text
-              fontSize="10"
-              fontWeight="700"
-              letterSpacing="2.8"
-              fill="rgba(45,106,79,0.75)"
-              fontFamily="inherit"
-            >
-              <textPath href="#arch" startOffset="50%" textAnchor="middle">
-                GHARS
-              </textPath>
-            </text>
-          </svg>
+            <textPath href="#ghars-arch" startOffset="50%" textAnchor="middle">
+              GHARS
+            </textPath>
+          </text>
+        </svg>
 
-          <motion.button
-            onClick={() => setOpen((o) => !o)}
-            whileTap={{ scale: 0.92 }}
-            animate={pulse ? { scale: [1, 1.08, 1, 1.08, 1] } : { scale: 1 }}
-            transition={
-              pulse ? { duration: 2.2, ease: "easeInOut" } : { duration: 0.2 }
-            }
-            className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full
-              bg-[#faf7f0] border shadow-[0_6px_22px_-6px_rgba(45,106,79,0.35)] overflow-visible
-              ${
-                open
-                  ? "border-primary/50 shadow-[0_6px_26px_-4px_rgba(45,106,79,0.45)]"
-                  : "border-[rgba(45,106,79,0.3)] hover:border-primary/50"
-              }`}
-            aria-label={open ? "Close menu" : "Open navigation"}
-            aria-expanded={open}
-          >
-            <SparkleRing active={!open} />
-            <Image
-              src="/logo.png"
-              alt="Ghars"
-              width={30}
-              height={30}
-              className="select-none relative z-10"
-            />
-          </motion.button>
-        </div>
+        {/* Centre button */}
+        <motion.button
+          onClick={() => setOpen((o) => !o)}
+          whileTap={{ scale: 0.92 }}
+          animate={pulse ? { scale: [1, 1.08, 1, 1.08, 1] } : { scale: 1 }}
+          transition={
+            pulse ? { duration: 2.2, ease: "easeInOut" } : { duration: 0.2 }
+          }
+          className="relative flex items-center justify-center rounded-full bg-[#faf7f0] overflow-visible"
+          style={{
+            width: BTN_SIZE,
+            height: BTN_SIZE,
+            border: open
+              ? "1.5px solid rgba(45,106,79,0.5)"
+              : "1.5px solid rgba(45,106,79,0.3)",
+            boxShadow: open
+              ? "0 6px 26px -4px rgba(45,106,79,0.45)"
+              : "0 6px_22px -6px rgba(45,106,79,0.35)",
+          }}
+          aria-label={open ? "Close menu" : "Open navigation"}
+          aria-expanded={open}
+        >
+          <SparkleRing active={!open} />
+          <Image
+            src="/logo.png"
+            alt="Ghars"
+            width={30}
+            height={30}
+            className="select-none relative z-10"
+          />
+        </motion.button>
       </div>
     </>
   );

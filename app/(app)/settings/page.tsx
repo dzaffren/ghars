@@ -194,8 +194,8 @@ export default function SettingsPage() {
       className="min-h-screen pb-32"
       style={{ backgroundColor: "var(--sand)" }}
     >
-      {/* Header */}
-      <div className="px-5 pt-14 pb-6">
+      {/* Header — same max-width as content */}
+      <div className="max-w-sm mx-auto px-5 pt-14 pb-6">
         <h1 className="text-xl font-semibold" style={{ color: "#1a3a2a" }}>
           Settings
         </h1>
