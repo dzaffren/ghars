@@ -195,21 +195,20 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* GHARS arch — fixed position just above the button.
-            ViewBox is 40 tall so the arc peak (which rises ~24px above the
-            chord baseline) fits entirely inside without clipping letters. */}
+        {/* GHARS arch — hugs the curved top of the button.
+            Button is 56px diameter (r=28). Using r=32 for the text arc
+            gives a ~4px halo. The arc matches the button's curvature so
+            letters sit at uniform distance from the button edge. */}
         <svg
-          width="96"
-          height="40"
-          viewBox="0 0 96 40"
+          width="80"
+          height="32"
+          viewBox="0 0 80 32"
           className="pointer-events-none select-none"
           style={{
             position: "fixed",
-            // Button top sits at: 24 (bottom offset) + 56 (btn height) = 80px from screen bottom.
-            // SVG is 40 tall; we want the arc BASELINE (y=38 in viewBox) ~4px above button top.
-            // So the SVG's bottom edge = button top + 4 - (40 - 38) = 82. The arc peak sits
-            // ~13px higher, giving the letters a small comfortable breath from the button.
-            bottom: 24 + BTN_SIZE + 4,
+            // Sit 2px above the button top. Button top = 24 + 56 = 80 from screen bottom.
+            // SVG bottom edge 2px higher than button top.
+            bottom: 24 + BTN_SIZE + 2,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 51,
@@ -217,13 +216,13 @@ export function RadialNav() {
           aria-hidden="true"
         >
           <defs>
-            {/* Gentler arc: chord 84, radius 50, peaks ~13px above baseline — all inside viewBox */}
-            <path id="ghars-arch" d="M 6,38 A 50,50 0 0,1 90,38" fill="none" />
+            {/* Tight arc matching button curvature: r=32, chord ~64, peaks ~16px */}
+            <path id="ghars-arch" d="M 8,30 A 32,32 0 0,1 72,30" fill="none" />
           </defs>
           <text
-            fontSize="11"
+            fontSize="10"
             fontWeight="700"
-            letterSpacing="3"
+            letterSpacing="2.5"
             fill="var(--grove-green)"
             fontFamily="inherit"
           >
