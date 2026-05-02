@@ -3,23 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  Home,
-  Compass,
-  BookMarked,
-  Users,
-  History,
-  BookOpen,
-} from "lucide-react";
+import { Home, BookOpen, Settings } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const TABS = [
   { href: "/today", icon: Home, label: "Today" },
-  { href: "/explore", icon: Compass, label: "Explore" },
-  { href: "/dhikr", icon: BookMarked, label: "Tasbih" },
-  { href: "/circles", icon: Users, label: "Circles" },
-  { href: "/history", icon: History, label: "History" },
-  { href: "/reflections", icon: BookOpen, label: "Journal" },
+  { href: "/journal", icon: BookOpen, label: "Journal" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ] as const;
 
 // Anchored bottom-right — orbit opens into the upper-left quadrant.
