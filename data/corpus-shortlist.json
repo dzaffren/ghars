@@ -2,81 +2,181 @@
   {
     "verse_key": "96:1",
     "theme": "Knowledge & Learning",
-    "tafsir_extract": "The first revelation commands reading in the name of Allah, establishing that seeking knowledge is the foundation of faith and worship.",
     "action_prompt_1": "Read something beneficial today and reflect on how it connects to your understanding of Allah.",
-    "action_prompt_2": "Teach one thing you know to someone else, beginning with bismillah.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Teach one thing you know to someone else, beginning with bismillah."
   },
   {
     "verse_key": "2:286",
     "theme": "Divine Mercy & Capacity",
-    "tafsir_extract": "Allah does not burden a soul beyond what it can bear — a promise of divine mercy ensuring every trial comes with sufficient inner capacity to endure.",
     "action_prompt_1": "Identify one challenge you face and remind yourself: Allah has already given you what you need to handle it.",
-    "action_prompt_2": "Make du'a for ease in a difficulty, trusting this verse as a covenant from Allah.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Make du'a for ease in a difficulty, trusting this verse as a covenant from Allah."
   },
   {
     "verse_key": "103:1",
     "theme": "Time & Righteous Action",
-    "tafsir_extract": "By time, humanity is in loss — except those who believe, do good, and counsel each other toward truth and patience.",
     "action_prompt_1": "Plan one hour today with intentional good action rather than letting time pass unnoticed.",
-    "action_prompt_2": "Encourage a friend or family member toward a righteous act, fulfilling mutual counsel.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Encourage a friend or family member toward a righteous act, fulfilling mutual counsel."
   },
   {
     "verse_key": "49:12",
     "theme": "Brotherhood & Avoiding Suspicion",
-    "tafsir_extract": "Believers are commanded to avoid much suspicion, not spy on one another, and not backbite — for backbiting is likened to eating the flesh of a dead brother.",
     "action_prompt_1": "When a negative thought about someone arises, consciously replace it with a charitable interpretation.",
-    "action_prompt_2": "Avoid sharing negative speech about an absent person, even if it is true, for one day.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Avoid sharing negative speech about an absent person, even if it is true, for one day."
   },
   {
     "verse_key": "55:13",
     "theme": "Gratitude & Divine Blessings",
-    "tafsir_extract": "Which of your Lord's favours will you deny? — a refrain repeated 31 times, calling humanity and jinn to constant grateful acknowledgment.",
     "action_prompt_1": "List three specific blessings you received today that you normally overlook.",
-    "action_prompt_2": "Say alhamdulillah sincerely before each meal, pausing to feel genuine gratitude.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Say alhamdulillah sincerely before each meal, pausing to feel genuine gratitude."
   },
   {
     "verse_key": "4:36",
     "theme": "Kindness to Parents & Neighbours",
-    "tafsir_extract": "Worship Allah and associate nothing with Him; be good to parents, relatives, orphans, the poor, and neighbours both near and far.",
     "action_prompt_1": "Do one kind act for a neighbour today — a greeting, a gift, or helping with a task.",
-    "action_prompt_2": "Call or visit a parent or close relative with the sole intention of honouring them.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Call or visit a parent or close relative with the sole intention of honouring them."
   },
   {
     "verse_key": "2:153",
     "theme": "Patience & Prayer",
-    "tafsir_extract": "Seek help through patience and prayer — Allah is with those who are patient, making sabr and salah the twin anchors of the believer's life.",
     "action_prompt_1": "When you feel overwhelmed today, pause and pray two rak'ahs before responding or deciding.",
-    "action_prompt_2": "Practise conscious sabr in one frustrating moment by breathing, reciting bismillah, and waiting.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Practise conscious sabr in one frustrating moment by breathing, reciting bismillah, and waiting."
   },
   {
     "verse_key": "13:28",
     "theme": "Remembrance of Allah & Contentment",
-    "tafsir_extract": "Verily in the remembrance of Allah do hearts find rest — dhikr is prescribed as the direct cure for anxiety and restlessness of the soul.",
     "action_prompt_1": "Set a reminder for three times today to stop and make ten counts of dhikr before continuing.",
-    "action_prompt_2": "Replace one session of mindless scrolling with five minutes of quiet, focused dhikr.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Replace one session of mindless scrolling with five minutes of quiet, focused dhikr."
   },
   {
     "verse_key": "17:23",
     "theme": "Honour to Parents",
-    "tafsir_extract": "Allah decrees that you worship none but Him and that you be good to parents — if they reach old age, say not even 'uff' and speak to them with noble words.",
     "action_prompt_1": "Speak to your parents today with extra gentleness, refraining from any impatient tone.",
-    "action_prompt_2": "Perform one act of service for a parent without being asked — a task, errand, or warm conversation.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Perform one act of service for a parent without being asked — a task, errand, or warm conversation."
   },
   {
     "verse_key": "95:4",
     "theme": "Human Dignity & Purpose",
-    "tafsir_extract": "We created the human being in the best of forms — a reminder that every person carries inherent divine dignity and purpose.",
     "action_prompt_1": "Treat yourself and one other person today with the dignity befitting someone created in the best form.",
-    "action_prompt_2": "Reflect on a talent or quality Allah placed in you and use it in His service today.",
-    "human_reviewed_at": "2026-05-02T00:00:00Z"
+    "action_prompt_2": "Reflect on a talent or quality Allah placed in you and use it in His service today."
+  },
+  {
+    "verse_key": "65:3",
+    "theme": "Trust in Allah",
+    "action_prompt_1": "Name one outcome you have been anxiously controlling. Hand it to Allah in du'a and take one step, then release the rest.",
+    "action_prompt_2": "Before a decision today, say 'hasbiyallah' three times and notice how your chest feels afterward."
+  },
+  {
+    "verse_key": "39:53",
+    "theme": "Hope & Divine Forgiveness",
+    "action_prompt_1": "Make sincere tawbah for one thing weighing on you, then refuse to carry the guilt after asking Allah's forgiveness.",
+    "action_prompt_2": "Extend to someone else the same mercy you are asking Allah for today."
+  },
+  {
+    "verse_key": "14:7",
+    "theme": "Gratitude & Increase",
+    "action_prompt_1": "Thank someone today who has benefited you but whom you have never properly thanked.",
+    "action_prompt_2": "Before sleeping, name five blessings from today aloud — speak them, don't just think them."
+  },
+  {
+    "verse_key": "3:134",
+    "theme": "Generosity & Forgiveness of Others",
+    "action_prompt_1": "Give something in charity today, even small, choosing a moment when it feels inconvenient.",
+    "action_prompt_2": "Release one grievance you are holding against someone — say the words 'I forgive them' aloud."
+  },
+  {
+    "verse_key": "49:13",
+    "theme": "Unity & Taqwa",
+    "action_prompt_1": "Have a genuine conversation with someone from a different background than your own, listening more than speaking.",
+    "action_prompt_2": "Reflect honestly on one way you judge others by status or appearance and choose a different lens today."
+  },
+  {
+    "verse_key": "16:90",
+    "theme": "Justice & Character",
+    "action_prompt_1": "In one interaction today, ask yourself: am I being fair, or am I bending toward my own interest?",
+    "action_prompt_2": "Do one act of justice quietly — correct something, stand for someone, or return what is owed."
+  },
+  {
+    "verse_key": "17:37",
+    "theme": "Humility & Character",
+    "action_prompt_1": "Walk and enter rooms today with quiet presence rather than the need to be noticed.",
+    "action_prompt_2": "In a conversation where you know more than others, hold back one correction and listen instead."
+  },
+  {
+    "verse_key": "18:46",
+    "theme": "Dunya & Lasting Good",
+    "action_prompt_1": "Do one action today purely for the akhirah — something no one will see and that earns no worldly benefit.",
+    "action_prompt_2": "Audit one way you are investing in dunya and ask: is there a small redirect toward what is lasting?"
+  },
+  {
+    "verse_key": "50:16",
+    "theme": "Allah's Closeness",
+    "action_prompt_1": "Speak to Allah privately today as you would speak to someone standing right beside you.",
+    "action_prompt_2": "In a quiet moment, sit with the awareness that Allah is closer to you than any other presence."
+  },
+  {
+    "verse_key": "9:119",
+    "theme": "Truthfulness",
+    "action_prompt_1": "Notice one moment today where a small dishonesty would be easy and choose truth instead.",
+    "action_prompt_2": "Be honest with yourself about one thing you have been avoiding — write it down or say it aloud."
+  },
+  {
+    "verse_key": "31:18",
+    "theme": "Humility & Speech",
+    "action_prompt_1": "Give your full attention to the next person who speaks to you — no phone, no mental wandering.",
+    "action_prompt_2": "Hold back one boastful statement today and replace it with acknowledging Allah's favour instead."
+  },
+  {
+    "verse_key": "2:177",
+    "theme": "True Righteousness",
+    "action_prompt_1": "Fulfil one commitment you made to someone that you have been postponing.",
+    "action_prompt_2": "Give from something you value — time, money, or attention — to someone who needs it more."
+  },
+  {
+    "verse_key": "25:63",
+    "theme": "Character of the Believer",
+    "action_prompt_1": "Respond to one rude or careless remark today with calm and dignity rather than reacting in kind.",
+    "action_prompt_2": "Walk through a busy space today with unhurried, grounded presence — noticing rather than rushing."
+  },
+  {
+    "verse_key": "4:135",
+    "theme": "Justice",
+    "action_prompt_1": "In a situation today where you have power or authority, err on the side of fairness even at your own cost.",
+    "action_prompt_2": "Speak up for something just today — even if it is only to say one quiet, honest sentence."
+  },
+  {
+    "verse_key": "3:200",
+    "theme": "Steadfastness",
+    "action_prompt_1": "Stay with one difficult task until it is done today, noticing the urge to quit and choosing to remain.",
+    "action_prompt_2": "Identify one area of life where you need more consistency and take one concrete step to stabilise it."
+  },
+  {
+    "verse_key": "94:5",
+    "theme": "Ease After Hardship",
+    "action_prompt_1": "Name one hardship you are in the middle of and hold this verse as a factual promise, not a comfort.",
+    "action_prompt_2": "Share this assurance with someone who is struggling — sometimes the gift is simply passing on the promise."
+  },
+  {
+    "verse_key": "59:18",
+    "theme": "Self-Accountability",
+    "action_prompt_1": "Before the day ends, spend two minutes in honest self-review: what did I do today that I am proud of, and what do I wish I had done differently?",
+    "action_prompt_2": "Write down one intention for tomorrow based on what you noticed today."
+  },
+  {
+    "verse_key": "33:41",
+    "theme": "Abundant Remembrance",
+    "action_prompt_1": "Begin your morning with thirty seconds of deliberate dhikr before checking your phone.",
+    "action_prompt_2": "End the day with a brief evening wird — even three lines of subhanallah, alhamdulillah, Allahu akbar."
+  },
+  {
+    "verse_key": "9:51",
+    "theme": "Trust & Decree",
+    "action_prompt_1": "Take one worry that is outside your control and consciously leave it with Allah through du'a.",
+    "action_prompt_2": "When something goes wrong today, pause before reacting and say: this was written — what is my best response from here?"
+  },
+  {
+    "verse_key": "2:255",
+    "theme": "The Greatness of Allah",
+    "action_prompt_1": "Recite Ayat al-Kursi slowly once today, pausing on each of Allah's attributes rather than rushing through.",
+    "action_prompt_2": "In a moment of fear or uncertainty today, return to this ayah and let the vastness of Allah reframe your situation."
   }
 ]
