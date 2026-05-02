@@ -195,28 +195,32 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* GHARS arch — fixed position just above the button */}
+        {/* GHARS arch — fixed position just above the button.
+            ViewBox is 40 tall so the arc peak (which rises ~24px above the
+            chord baseline) fits entirely inside without clipping letters. */}
         <svg
-          width="80"
-          height="32"
-          viewBox="0 0 80 32"
+          width="96"
+          height="40"
+          viewBox="0 0 96 40"
           className="pointer-events-none select-none"
           style={{
             position: "fixed",
-            bottom: 24 + BTN_SIZE + 2, // screen bottom offset + button height + gap
+            bottom: 24 + BTN_SIZE - 2, // just above button top
             left: "50%",
             transform: "translateX(-50%)",
+            zIndex: 51,
           }}
           aria-hidden="true"
         >
           <defs>
-            <path id="ghars-arch" d="M 4,32 A 36,36 0 0,1 76,32" fill="none" />
+            {/* Gentler arc: chord 84, radius 50, peaks ~13px above baseline — all inside viewBox */}
+            <path id="ghars-arch" d="M 6,38 A 50,50 0 0,1 90,38" fill="none" />
           </defs>
           <text
             fontSize="11"
             fontWeight="700"
             letterSpacing="3"
-            fill="rgba(45,106,79,0.75)"
+            fill="var(--grove-green)"
             fontFamily="inherit"
           >
             <textPath href="#ghars-arch" startOffset="50%" textAnchor="middle">
