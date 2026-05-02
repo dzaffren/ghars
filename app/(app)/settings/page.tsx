@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bell, BookOpen, Clock, LogOut, Moon, Pause, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const TRANSLATIONS = [
   { id: "131", label: "The Clear Quran (Mustafa Khattab)" },
@@ -8,26 +17,113 @@ const TRANSLATIONS = [
   { id: "20", label: "Pickthall" },
 ];
 
+function SettingRow({
+  icon: Icon,
+  label,
+  description,
+  children,
+}: {
+  icon: React.ElementType;
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
+          <Icon size={15} className="text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground leading-tight">
+            {label}
+          </p>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="relative h-6 w-11 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      style={{ backgroundColor: checked ? "var(--primary)" : "#d1d5db" }}
+    >
+      <span
+        className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+        style={{ transform: checked ? "translateX(20px)" : "translateX(0)" }}
+      />
+    </button>
+  );
+}
+
+function TimeInput({
+  value,
+  onChange,
+  testId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  testId: string;
+}) {
+  return (
+    <input
+      type="time"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-lg border-0 bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none ring-0 focus:ring-2 focus:ring-ring cursor-pointer text-center"
+      style={{ minWidth: "5.5rem" }}
+      data-testid={testId}
+    />
+  );
+}
+
 export default function SettingsPage() {
+  const [displayName, setDisplayName] = useState("");
   const [morningTime, setMorningTime] = useState("08:00");
   const [eveningTime, setEveningTime] = useState("21:00");
   const [translationId, setTranslationId] = useState("131");
   const [paused, setPaused] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [notifPermission, setNotifPermission] = useState<string>("default");
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setNotifPermission(Notification.permission);
     }
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.display_name) setDisplayName(d.display_name);
+      })
+      .catch(() => {});
   }, []);
 
   async function saveSettings() {
     setSaving(true);
+    setSaved(false);
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        display_name: displayName.trim(),
         morning_time: morningTime,
         evening_time: eveningTime,
         translation_id: translationId,
@@ -35,6 +131,8 @@ export default function SettingsPage() {
       }),
     });
     setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   async function enableNotifications() {
@@ -45,7 +143,6 @@ export default function SettingsPage() {
     const permission = await Notification.requestPermission();
     setNotifPermission(permission);
     if (permission !== "granted") return;
-
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -64,115 +161,155 @@ export default function SettingsPage() {
   }
 
   return (
-    <main
-      className="min-h-screen p-6 pb-24"
-      style={{ backgroundColor: "var(--sand)" }}
-    >
-      <div className="max-w-sm mx-auto flex flex-col gap-6">
-        <h1
-          className="text-2xl font-bold"
-          style={{ color: "var(--grove-green)" }}
-        >
-          Settings
-        </h1>
-
-        <div
-          className="rounded-2xl p-5 shadow-sm flex flex-col gap-4"
-          style={{ backgroundColor: "white" }}
-        >
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Morning reminder
-            </label>
-            <input
-              type="time"
-              value={morningTime}
-              onChange={(e) => setMorningTime(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
-              data-testid="settings-morning-time"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Evening reminder
-            </label>
-            <input
-              type="time"
-              value={eveningTime}
-              onChange={(e) => setEveningTime(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
-              data-testid="settings-evening-time"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Translation
-            </label>
-            <select
-              value={translationId}
-              onChange={(e) => setTranslationId(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
-              data-testid="settings-translation"
-            >
-              {TRANSLATIONS.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={paused}
-              onChange={(e) => setPaused(e.target.checked)}
-              data-testid="settings-pause"
-            />
-            <span className="text-sm">Pause all notifications</span>
-          </label>
+    <main className="min-h-screen p-6 pb-28 bg-background">
+      <div className="max-w-sm mx-auto flex flex-col gap-5">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage your reminders and preferences
+          </p>
         </div>
 
+        {/* Profile */}
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Profile</CardTitle>
+            <CardDescription>How you appear on the home screen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingRow
+              icon={User}
+              label="Your name"
+              description="Used in the greeting"
+            >
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="e.g. Ahmad"
+                maxLength={80}
+                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none focus:ring-2 focus:ring-ring text-right"
+                style={{ maxWidth: "9rem" }}
+                data-testid="settings-display-name"
+              />
+            </SettingRow>
+          </CardContent>
+        </Card>
+
+        {/* Reminders */}
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Reminders</CardTitle>
+            <CardDescription>
+              When to receive your daily notifications
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="divide-y divide-border">
+            <SettingRow
+              icon={Clock}
+              label="Morning reminder"
+              description="Daily ayah notification"
+            >
+              <TimeInput
+                value={morningTime}
+                onChange={setMorningTime}
+                testId="settings-morning-time"
+              />
+            </SettingRow>
+            <SettingRow
+              icon={Moon}
+              label="Evening reminder"
+              description="Reflection prompt"
+            >
+              <TimeInput
+                value={eveningTime}
+                onChange={setEveningTime}
+                testId="settings-evening-time"
+              />
+            </SettingRow>
+            <SettingRow
+              icon={Pause}
+              label="Pause all notifications"
+              description="Silence reminders temporarily"
+            >
+              <Toggle checked={paused} onChange={setPaused} />
+            </SettingRow>
+          </CardContent>
+        </Card>
+
+        {/* Reading */}
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-base">Reading</CardTitle>
+            <CardDescription>Quran translation preference</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingRow icon={BookOpen} label="Translation">
+              <select
+                value={translationId}
+                onChange={(e) => setTranslationId(e.target.value)}
+                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-primary outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                style={{ maxWidth: "10rem" }}
+                data-testid="settings-translation"
+              >
+                {TRANSLATIONS.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </SettingRow>
+          </CardContent>
+        </Card>
+
+        {/* Notifications */}
         {notifPermission !== "granted" && (
-          <button
-            onClick={enableNotifications}
-            className="w-full py-3 rounded-xl text-sm font-medium border"
-            style={{
-              borderColor: "var(--grove-green)",
-              color: "var(--grove-green)",
-            }}
-            data-testid="enable-notifications-btn"
-          >
-            Enable push notifications
-          </button>
-        )}
-        {notifPermission === "denied" && (
-          <p
-            className="text-xs text-center"
-            style={{ color: "var(--text-muted)" }}
-            data-testid="notif-permission-status"
-          >
-            Notifications are disabled in your browser settings.
-          </p>
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-base">Push notifications</CardTitle>
+              <CardDescription>
+                {notifPermission === "denied"
+                  ? "Notifications are blocked in your browser settings."
+                  : "Enable browser push notifications to receive reminders."}
+              </CardDescription>
+            </CardHeader>
+            {notifPermission !== "denied" && (
+              <CardContent>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={enableNotifications}
+                  data-testid="enable-notifications-btn"
+                >
+                  <Bell size={15} />
+                  Enable push notifications
+                </Button>
+              </CardContent>
+            )}
+          </Card>
         )}
 
-        <button
+        {/* Save */}
+        <Button
+          size="lg"
+          className="w-full"
           onClick={saveSettings}
           disabled={saving}
-          className="w-full py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-          style={{ backgroundColor: "var(--grove-green)" }}
           data-testid="save-settings-btn"
         >
-          {saving ? "Saving…" : "Save settings"}
-        </button>
+          {saving ? "Saving…" : saved ? "Saved ✓" : "Save settings"}
+        </Button>
 
-        <button
+        {/* Sign out */}
+        <Button
+          variant="ghost"
+          className="w-full text-muted-foreground"
           onClick={signOut}
-          className="w-full py-3 rounded-xl text-sm"
-          style={{ color: "var(--text-muted)" }}
           data-testid="sign-out-btn"
         >
+          <LogOut size={15} />
           Sign out
-        </button>
+        </Button>
       </div>
     </main>
   );

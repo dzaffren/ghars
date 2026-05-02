@@ -2,8 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnswerCard } from "../_components/AnswerCard";
 
 type DidApply = "yes_fully" | "partly" | "not_today";
+
+type Phase =
+  | "idle"
+  | "awaiting_answer"
+  | "answer"
+  | "fallen_through"
+  | "planting";
+
+interface AnswerPayload {
+  ayah_insight: string;
+  noticing: string;
+  model: string;
+  generated_at: string;
+}
+
+const ANSWER_TOTAL_TIMEOUT_MS = 8000;
+const ANSWER_POLL_INTERVAL_MS = 1500;
 
 interface Props {
   missionId: string;
@@ -20,7 +38,6 @@ interface Props {
 export function ReflectView({
   missionId,
   missionText,
-  verseKey,
   surahName,
   ayahNumber,
   existingReflectionId,
@@ -29,35 +46,37 @@ export function ReflectView({
   windowClosesAt,
 }: Props) {
   const router = useRouter();
-  const [didApply, setDidApply] = useState<DidApply | null>(
-    existingDidApply ?? null
-  );
-  const [text, setText] = useState(existingText ?? "");
+  const [didApply, setDidApply] = useState<DidApply | null>(null);
+  const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [answer, setAnswer] = useState<AnswerPayload | null>(null);
+  const [showDisclosure, setShowDisclosure] = useState(false);
   const [syncStatus, setSyncStatus] = useState<
     "synced" | "retry_queued" | null
   >(null);
 
+  const alreadySubmitted = !!existingReflectionId;
   const windowClosed = windowClosesAt
     ? new Date() >= new Date(windowClosesAt)
     : false;
-  const canSubmit = didApply !== null && text.length >= 40 && !windowClosed;
+  const canSubmit =
+    !alreadySubmitted &&
+    didApply !== null &&
+    text.length >= 40 &&
+    !windowClosed;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
-    const url = existingReflectionId
-      ? `/api/reflections/${existingReflectionId}`
-      : "/api/reflections";
-    const method = existingReflectionId ? "PATCH" : "POST";
-    const body: Record<string, unknown> = { did_apply: didApply, text };
-    if (!existingReflectionId) body.mission_id = missionId;
-
-    const res = await fetch(url, {
-      method,
+    const res = await fetch("/api/reflections", {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        mission_id: missionId,
+        did_apply: didApply,
+        text,
+      }),
     });
     const json = await res.json();
     setSubmitting(false);
@@ -66,8 +85,8 @@ export function ReflectView({
       setSyncStatus(
         json.sync_status === "retry_queued" ? "retry_queued" : "synced"
       );
-      setDone(true);
-      setTimeout(() => router.push("/grove"), 1500);
+      setPhase("awaiting_answer");
+      startAnswerFlow(json.reflection_id);
     } else {
       alert(
         json.error?.message ?? "Could not save reflection. Please try again."
@@ -75,7 +94,124 @@ export function ReflectView({
     }
   }
 
-  if (done) {
+  async function startAnswerFlow(reflectionId: string) {
+    const deadline = Date.now() + ANSWER_TOTAL_TIMEOUT_MS;
+    let payload: AnswerPayload | null = null;
+
+    try {
+      const first = await fetch(`/api/reflections/${reflectionId}/answer`, {
+        method: "POST",
+      });
+      const body = (await first.json()) as {
+        status?: "ready" | "pending" | "unavailable";
+        answer?: AnswerPayload;
+        poll_after_ms?: number;
+      };
+
+      if (body.status === "ready" && body.answer) {
+        payload = body.answer;
+      } else if (body.status === "pending") {
+        const interval = body.poll_after_ms ?? ANSWER_POLL_INTERVAL_MS;
+        while (Date.now() < deadline && !payload) {
+          await new Promise((r) => setTimeout(r, interval));
+          const poll = await fetch(`/api/reflections/${reflectionId}/answer`);
+          const pj = (await poll.json()) as {
+            status?: "ready" | "unavailable";
+            answer?: AnswerPayload;
+          };
+          if (pj.status === "ready" && pj.answer) {
+            payload = pj.answer;
+            break;
+          }
+          if (pj.status === "unavailable") break;
+        }
+      }
+    } catch {
+      // fall through
+    }
+
+    if (payload) {
+      setAnswer(payload);
+      // Fire-and-forget disclosure check and flip.
+      try {
+        const me = await fetch("/api/users/me");
+        if (me.ok) {
+          const meJson = (await me.json()) as {
+            answered_reflection_disclosure_seen?: boolean;
+          };
+          if (!meJson.answered_reflection_disclosure_seen) {
+            setShowDisclosure(true);
+            fetch("/api/users/me", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                answered_reflection_disclosure_seen: true,
+              }),
+            }).catch(() => {});
+          }
+        } else {
+          // If the GET endpoint isn't wired up, show the disclosure and
+          // optimistically mark it seen — the PATCH is idempotent.
+          setShowDisclosure(true);
+          fetch("/api/users/me", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              answered_reflection_disclosure_seen: true,
+            }),
+          }).catch(() => {});
+        }
+      } catch {
+        /* disclosure is best-effort */
+      }
+      setPhase("answer");
+    } else {
+      setPhase("fallen_through");
+      setTimeout(() => router.push("/today"), 1500);
+    }
+  }
+
+  function handlePlantTree() {
+    setPhase("planting");
+    setTimeout(() => router.push("/today"), 1500);
+  }
+
+  if (phase === "awaiting_answer") {
+    return (
+      <div
+        className="flex flex-col items-center gap-3 py-12"
+        data-testid="answer-holding-state"
+      >
+        <div
+          className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+          style={{ color: "var(--grove-green-light)" }}
+          aria-hidden
+        />
+        <p
+          className="text-center text-sm"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Reflecting on your words…
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === "answer" && answer) {
+    return (
+      <AnswerCard
+        ayahInsight={answer.ayah_insight}
+        noticing={answer.noticing}
+        verseKey={`${surahName} · ${ayahNumber}`}
+        surahName={surahName}
+        ayahNumber={ayahNumber}
+        showDisclosure={showDisclosure}
+        onPlantTree={handlePlantTree}
+      />
+    );
+  }
+
+  if (phase === "fallen_through" || phase === "planting") {
     return (
       <div
         className="flex flex-col items-center gap-4 py-12"
@@ -102,17 +238,24 @@ export function ReflectView({
     );
   }
 
-  if (windowClosed && existingText) {
+  if (alreadySubmitted) {
+    const didApplyLabel =
+      existingDidApply === "yes_fully"
+        ? "Yes, fully"
+        : existingDidApply === "partly"
+          ? "Partly"
+          : "Not today";
     return (
       <div
         className="rounded-2xl p-6 shadow-sm"
         style={{ backgroundColor: "white" }}
+        data-testid="reflection-submitted"
       >
         <p
           className="text-xs uppercase tracking-widest mb-3"
-          style={{ color: "var(--text-muted)" }}
+          style={{ color: "var(--grove-green)" }}
         >
-          Reflection (closed)
+          Reflection submitted ✓
         </p>
         <p
           className="text-sm font-medium mb-2"
@@ -125,6 +268,9 @@ export function ReflectView({
           style={{ color: "var(--text-muted)" }}
         >
           {missionText}
+        </p>
+        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+          Did you act on it? <strong>{didApplyLabel}</strong>
         </p>
         <p
           className="text-sm leading-relaxed"

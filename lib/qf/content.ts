@@ -38,21 +38,32 @@ export async function getVerseByKey(verseKey: string): Promise<VersePackage> {
 }
 
 // Get translation text for a verse key
+// Translation ids here are resolved via api.quran.com/api/v4. Legacy id "131"
+// (Clear Quran on apis.quran.foundation) does not exist on this host, so we
+// map it to Saheeh International (20) as a safe English default.
 export async function getTranslation(
   verseKey: string,
-  translationId = "131"
+  translationId = "20"
 ): Promise<TranslationResult> {
-  // QF API: GET /verses/by_key/{key}?translations={id}&fields=text_uthmani
+  const resolvedId = translationId === "131" ? "20" : translationId;
   try {
     const data = await qfContentFetch(
-      `/verses/by_key/${verseKey}?translations=${translationId}&fields=text_uthmani`
+      `/verses/by_key/${verseKey}?translations=${resolvedId}&fields=text_uthmani`
     );
     const translations = data.verse?.translations ?? data.translations ?? [];
-    const t = translations[0];
-    return { text: t?.text ?? "" };
+    const raw = translations[0]?.text ?? "";
+    return { text: stripHtml(raw) };
   } catch {
     return { text: "" };
   }
+}
+
+function stripHtml(s: string): string {
+  return s
+    .replace(/<sup[^>]*>.*?<\/sup>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Get audio URL for a verse
@@ -80,12 +91,12 @@ export async function getFullTafsir(
   verseKey: string,
   tafsirId = "169"
 ): Promise<TafsirResult> {
-  // QF API: GET /quran/tafsirs/{tafsir_id}?verse_key={key} — tafsir_id 169 = Ibn Kathir English
+  // QF API: GET /tafsirs/{tafsir_id}/by_ayah/{verse_key} — tafsir_id 169 = Ibn Kathir English
   try {
     const data = await qfContentFetch(
-      `/quran/tafsirs/${tafsirId}?verse_key=${verseKey}`
+      `/tafsirs/${tafsirId}/by_ayah/${verseKey}`
     );
-    const t = data.tafsirs?.[0] ?? data.tafsir;
+    const t = data.tafsir ?? data.tafsirs?.[0];
     return {
       verse_key: verseKey,
       text: t?.text ?? "",

@@ -108,20 +108,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check for existing reflection
+  // Reject if a reflection already exists for this mission — one submission per day.
   const existing = await getReflectionByMissionId(mission_id);
   if (existing) {
-    if (new Date() >= new Date(existing.window_closes_at)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "CONFLICT_WINDOW_CLOSED",
-            message: "Reflection window has closed for this day",
-          },
+    return NextResponse.json(
+      {
+        error: {
+          code: "REFLECTION_ALREADY_SUBMITTED",
+          message: "A reflection has already been submitted for this mission",
         },
-        { status: 409 }
-      );
-    }
+      },
+      { status: 409 }
+    );
   }
 
   // Compute window_closes_at for new reflections
@@ -143,7 +141,6 @@ export async function POST(request: NextRequest) {
       didApply: did_apply,
       text,
       windowClosesAt: windowClosesAt.toISOString(),
-      existingId: existing?.id,
     });
   } catch (e) {
     console.error("Reflection insert failed:", e);

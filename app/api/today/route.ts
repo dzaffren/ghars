@@ -97,6 +97,23 @@ export async function GET(request: NextRequest) {
     .eq("assignment_id", assignment.id)
     .single();
 
+  // If mission exists, also fetch its reflection (may be null)
+  let reflection: {
+    id: string;
+    did_apply: string;
+    text: string;
+    submitted_at: string;
+    window_closes_at: string;
+  } | null = null;
+  if (mission) {
+    const { data: r } = await supabase
+      .from("reflections")
+      .select("id, did_apply, text, submitted_at, window_closes_at")
+      .eq("mission_id", mission.id)
+      .single();
+    reflection = r ?? null;
+  }
+
   return NextResponse.json({
     assignment_id: assignment.id,
     verse_key: assignment.verse_key,
@@ -114,6 +131,15 @@ export async function GET(request: NextRequest) {
           selected_prompt: mission.selected_prompt,
           is_custom: mission.is_custom,
           committed_at: mission.committed_at,
+        }
+      : null,
+    reflection: reflection
+      ? {
+          reflection_id: reflection.id,
+          did_apply: reflection.did_apply,
+          text: reflection.text,
+          submitted_at: reflection.submitted_at,
+          window_closes_at: reflection.window_closes_at,
         }
       : null,
   });

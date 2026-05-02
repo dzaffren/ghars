@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     translation_id?: string;
     morning_time?: string;
     evening_time?: string;
+    display_name?: string;
   };
   try {
     body = await request.json();
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
     translation_id = "131",
     morning_time = "08:00",
     evening_time = "21:00",
+    display_name,
   } = body;
 
   // Validate time format HH:MM
@@ -35,9 +37,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createAdminSupabaseClient();
+  const nameUpdate =
+    typeof display_name === "string"
+      ? { display_name: display_name.trim().slice(0, 80) || null }
+      : {};
   const { error } = await supabase
     .from("users")
-    .update({ translation_id, morning_time, evening_time })
+    .update({ translation_id, morning_time, evening_time, ...nameUpdate })
     .eq("id", session.userId);
 
   if (error) {

@@ -11,6 +11,7 @@ const TRANSLATIONS = [
 
 export default function PreferencesPage() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState("");
   const [translationId, setTranslationId] = useState("131");
   const [morningTime, setMorningTime] = useState("08:00");
   const [eveningTime, setEveningTime] = useState("21:00");
@@ -23,6 +24,7 @@ export default function PreferencesPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        display_name: displayName.trim(),
         translation_id: translationId,
         morning_time: morningTime,
         evening_time: eveningTime,
@@ -51,6 +53,29 @@ export default function PreferencesPage() {
         >
           Your preferences
         </h2>
+
+        <div>
+          <label
+            className="block text-sm font-medium mb-2"
+            style={{ color: "var(--foreground)" }}
+          >
+            Your name{" "}
+            <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="e.g. Ahmad"
+            maxLength={80}
+            className="w-full border rounded-lg p-3 text-sm"
+            data-testid="display-name-input"
+          />
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+            Shows as "As-salamu alaykum, {displayName.trim() || "your name"}" on
+            the home screen.
+          </p>
+        </div>
 
         <div>
           <label

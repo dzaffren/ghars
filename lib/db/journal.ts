@@ -78,6 +78,56 @@ export async function listJournal(params: {
   return { entries, total: count ?? 0 };
 }
 
+export interface CalendarMark {
+  local_date: string;
+  did_apply: "yes_fully" | "partly" | "not_today";
+  reflection_id: string;
+}
+
+export async function getCalendarMarks(params: {
+  userId: string;
+  fromDate: string; // YYYY-MM-DD, inclusive
+  toDate: string; // YYYY-MM-DD, inclusive
+}): Promise<CalendarMark[]> {
+  const supabase = createAdminSupabaseClient();
+  const { data } = await supabase
+    .from("reflections")
+    .select(
+      `
+      id, did_apply,
+      missions!inner (
+        daily_assignments!inner (
+          user_id, local_date
+        )
+      )
+    `
+    )
+    .gte("submitted_at", params.fromDate)
+    .lt("submitted_at", nextDay(params.toDate))
+    .order("submitted_at", { ascending: false });
+
+  return (data ?? [])
+    .map((r) => {
+      const m = r.missions as unknown as {
+        daily_assignments: { user_id: string; local_date: string };
+      };
+      return {
+        local_date: m.daily_assignments.local_date,
+        did_apply: r.did_apply as "yes_fully" | "partly" | "not_today",
+        reflection_id: r.id as string,
+        user_id: m.daily_assignments.user_id,
+      };
+    })
+    .filter((e) => e.user_id === params.userId)
+    .map(({ user_id: _uid, ...rest }) => rest);
+}
+
+function nextDay(yyyymmdd: string): string {
+  const d = new Date(yyyymmdd + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function addBookmark(
   userId: string,
   verseKey: string,

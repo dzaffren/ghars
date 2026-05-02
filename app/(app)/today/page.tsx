@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { AyahCard } from "./_components/AyahCard";
-import { TafsirExtract } from "./_components/TafsirExtract";
 import { TafsirFullDrawer } from "./_components/TafsirFullDrawer";
-import { AudioPlayer } from "./_components/AudioPlayer";
 import { MissionCard } from "./_components/MissionCard";
 import { ReflectView } from "./reflect/ReflectView";
+import GardenPlant, { type TreeState } from "@/components/GardenPlant";
+import { motion } from "framer-motion";
+import { Flame } from "lucide-react";
+import { getStageProgress } from "@/lib/garden/stages";
 
 interface TodayData {
   assignment_id: string;
@@ -24,10 +26,24 @@ interface TodayData {
     is_custom: boolean;
     committed_at: string;
   } | null;
+  reflection: {
+    reflection_id: string;
+    did_apply: "yes_fully" | "partly" | "not_today";
+    text: string;
+    submitted_at: string;
+    window_closes_at: string;
+  } | null;
+}
+
+interface GroveSnapshot {
+  trees: unknown[];
+  streak_days: number;
 }
 
 export default function TodayPage() {
   const [data, setData] = useState<TodayData | null>(null);
+  const [grove, setGrove] = useState<GroveSnapshot | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tafsirOpen, setTafsirOpen] = useState(false);
@@ -38,15 +54,24 @@ export default function TodayPage() {
   useEffect(() => {
     const today = new Date();
     const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    fetch(`/api/today?local_date=${localDate}`)
-      .then((r) => r.json())
-      .then((d) => {
+    Promise.all([
+      fetch(`/api/today?local_date=${localDate}`).then((r) => r.json()),
+      fetch(`/api/grove`)
+        .then((r) => r.json())
+        .catch(() => null),
+      fetch(`/api/users/me`)
+        .then((r) => r.json())
+        .catch(() => null),
+    ])
+      .then(([d, g, me]) => {
         if (d.error) {
           setError(d.error.code);
           setLoading(false);
           return;
         }
         setData(d);
+        if (g && !g.error) setGrove(g);
+        if (me?.display_name) setDisplayName(me.display_name);
         if (d.mission) setSelectedPrompt(d.mission.selected_prompt);
         setLoading(false);
       })
@@ -55,6 +80,12 @@ export default function TodayPage() {
         setLoading(false);
       });
   }, []);
+
+  const treeState: TreeState = {
+    growthPoints: (grove?.trees?.length ?? 0) * 5,
+    currentStreak: grove?.streak_days ?? 0,
+    wilting: false,
+  };
 
   async function handleCommit() {
     if (!data || !selectedPrompt) return;
@@ -136,16 +167,16 @@ export default function TodayPage() {
       style={{ backgroundColor: "var(--sand)" }}
     >
       <div className="max-w-sm mx-auto flex flex-col gap-6">
+        <HeroStrip treeState={treeState} displayName={displayName} />
+
         <AyahCard
           arabic={data.arabic}
           translation={data.translation}
           surah_name={data.surah_name}
           ayah_number={data.ayah_number}
-        />
-        <AudioPlayer src={data.audio_url} />
-        <TafsirExtract
-          extract={data.tafsir_extract}
-          onExpand={() => setTafsirOpen(true)}
+          audio_url={data.audio_url}
+          tafsir_extract={data.tafsir_extract}
+          onExpandTafsir={() => setTafsirOpen(true)}
         />
         <TafsirFullDrawer
           verse_key={data.verse_key}
@@ -171,9 +202,93 @@ export default function TodayPage() {
             verseKey={data.verse_key}
             surahName={data.surah_name}
             ayahNumber={data.ayah_number}
+            existingReflectionId={data.reflection?.reflection_id}
+            existingDidApply={data.reflection?.did_apply}
+            existingText={data.reflection?.text}
+            windowClosesAt={data.reflection?.window_closes_at}
           />
         )}
       </div>
     </main>
+  );
+}
+
+function HeroStrip({
+  treeState,
+  displayName,
+}: {
+  treeState: TreeState;
+  displayName: string | null;
+}) {
+  const { currentStageName, nextStageName, progressPct, nextThreshold } =
+    getStageProgress(treeState.growthPoints);
+
+  return (
+    <section className="space-y-3" data-testid="today-garden">
+      <div className="flex items-start justify-between">
+        <p className="text-sm font-semibold" style={{ color: "#1a3a2a" }}>
+          {displayName
+            ? `As-salamu alaykum, ${displayName.split(" ")[0]}`
+            : "As-salamu alaykum"}
+        </p>
+        <div
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+          style={{ backgroundColor: "rgba(45,106,79,0.08)" }}
+        >
+          <Flame size={13} className="text-amber-500 shrink-0" aria-hidden />
+          <span
+            className="text-sm font-bold tabular-nums leading-none"
+            style={{ color: "var(--grove-green-light)" }}
+          >
+            {treeState.currentStreak}
+          </span>
+          <span
+            className="text-[10px] leading-none"
+            style={{ color: "var(--text-muted)" }}
+          >
+            streak
+          </span>
+        </div>
+      </div>
+
+      <div className="relative flex justify-center">
+        <GardenPlant state={treeState} size={200} />
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-[72px] shrink-0 text-right text-[11px] font-medium"
+            style={{ color: "var(--ink-soft, #5b6b62)" }}
+          >
+            {currentStageName}
+          </span>
+          <div
+            className="relative h-1.5 flex-1 overflow-hidden rounded-full"
+            style={{ backgroundColor: "var(--cream-deep, #f3ede0)" }}
+          >
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ backgroundColor: "var(--grove-green-light)" }}
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct * 100}%` }}
+              transition={{ duration: 0.8, ease: [0.34, 1.1, 0.64, 1] }}
+            />
+          </div>
+          <span
+            className="w-[72px] shrink-0 text-[11px] font-medium"
+            style={{ color: "var(--ink-soft, #5b6b62)" }}
+          >
+            {nextStageName}
+          </span>
+        </div>
+        <p
+          className="text-right text-[11px] pr-1"
+          style={{ color: "rgba(91,107,98,0.5)" }}
+        >
+          {treeState.growthPoints} / {nextThreshold} pts
+        </p>
+      </div>
+    </section>
   );
 }

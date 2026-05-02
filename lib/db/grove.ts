@@ -149,7 +149,10 @@ export async function getDayView(userId: string, localDate: string) {
       corpus_entries (tafsir_extract, action_prompt_1, action_prompt_2),
       missions (
         id, selected_prompt, committed_at,
-        reflections (id, did_apply, text, submitted_at, window_closes_at)
+        reflections (
+          id, did_apply, text, submitted_at, window_closes_at,
+          reflection_answers (ayah_insight, noticing, model, generated_at)
+        )
       )
     `
     )

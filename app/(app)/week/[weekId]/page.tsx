@@ -60,11 +60,11 @@ export default function WeekReviewPage() {
         <div className="text-center">
           <p style={{ color: "var(--text-muted)" }}>Week not found.</p>
           <button
-            onClick={() => router.push("/grove")}
+            onClick={() => router.push("/journal")}
             className="mt-4 text-sm underline"
             style={{ color: "var(--grove-green)" }}
           >
-            Back to grove
+            Back to journal
           </button>
         </div>
       </div>
@@ -78,11 +78,11 @@ export default function WeekReviewPage() {
       <div className="max-w-sm mx-auto flex flex-col gap-6">
         <div>
           <button
-            onClick={() => router.push("/grove")}
+            onClick={() => router.push("/journal")}
             className="text-sm mb-4 block"
             style={{ color: "var(--grove-green)" }}
           >
-            ← Back to grove
+            ← Back to journal
           </button>
           <h1
             className="text-xl font-bold"

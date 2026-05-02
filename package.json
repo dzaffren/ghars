@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "qf:smoke": "node --env-file=.env.local node_modules/.bin/tsx scripts/qf-smoke-test.ts"
+    "qf:smoke": "node --env-file=.env.local node_modules/.bin/tsx scripts/qf-smoke-test.ts",
+    "answered-reflection:experiment": "node --env-file=.env.local node_modules/.bin/tsx scripts/try-answered-reflection.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",
@@ -26,6 +27,7 @@
     "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.38.0",
     "iron-session": "^8.0.4",
+    "isomorphic-dompurify": "^3.12.0",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "ollama": "^0.6.3",

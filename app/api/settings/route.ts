@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     translation_id?: string;
     paused?: boolean;
     tz?: string;
+    display_name?: string;
   };
   try {
     body = await request.json();
@@ -23,7 +24,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "INVALID_JSON" }, { status: 400 });
   }
 
-  const { morning_time, evening_time, translation_id, paused, tz } = body;
+  const {
+    morning_time,
+    evening_time,
+    translation_id,
+    paused,
+    tz,
+    display_name,
+  } = body;
 
   if (morning_time && !TIME_RE.test(morning_time)) {
     return NextResponse.json(
@@ -47,6 +55,8 @@ export async function POST(request: NextRequest) {
   if (translation_id) updates.translation_id = translation_id;
   if (typeof paused === "boolean") updates.paused = paused;
   if (tz) updates.tz = tz;
+  if (typeof display_name === "string")
+    updates.display_name = display_name.trim().slice(0, 80) || null;
 
   const supabase = createAdminSupabaseClient();
   const { error } = await supabase

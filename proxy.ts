@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_PATHS = ["/today", "/grove", "/journal", "/week", "/settings"];
+const PROTECTED_PATHS = ["/today", "/journal", "/week", "/settings"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -35,10 +35,7 @@ export async function POST() {
     expiresIn: 86400 * 7,
   });
 
-  // TODO: seed demo data (7 days of grove) — full implementation in spec-content-corpus story
-  // For now, redirect to grove (empty state acceptable in scaffold phase)
-
-  return NextResponse.json({ redirect: "/grove" });
+  return NextResponse.json({ redirect: "/today" });
 }
 
 // Suppress unused import warning — APP_URL kept for future use in error redirects
