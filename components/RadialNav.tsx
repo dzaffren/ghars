@@ -147,32 +147,59 @@ export function RadialNav() {
             })}
         </AnimatePresence>
 
-        {/* Centre — Ghars logo (always visible) */}
-        <motion.button
-          onClick={() => setOpen((o) => !o)}
-          whileTap={{ scale: 0.92 }}
-          animate={pulse ? { scale: [1, 1.08, 1, 1.08, 1] } : { scale: 1 }}
-          transition={
-            pulse ? { duration: 2.2, ease: "easeInOut" } : { duration: 0.2 }
-          }
-          className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full
-            bg-[#faf7f0] border shadow-[0_6px_22px_-6px_rgba(45,106,79,0.35)]
-            ${
-              open
-                ? "border-primary/50 shadow-[0_6px_26px_-4px_rgba(45,106,79,0.45)]"
-                : "border-[rgba(45,106,79,0.3)] hover:border-primary/50"
-            }`}
-          aria-label={open ? "Close menu" : "Open navigation"}
-          aria-expanded={open}
-        >
-          <Image
-            src="/logo.png"
-            alt="Ghars"
-            width={30}
-            height={30}
-            className="select-none"
-          />
-        </motion.button>
+        {/* Centre — button + arching app name */}
+        <div className="relative flex items-center justify-center">
+          {/* Arching "Ghars" text above the button */}
+          <svg
+            width="80"
+            height="44"
+            viewBox="0 0 80 44"
+            className="absolute bottom-full mb-[-6px] pointer-events-none select-none"
+            aria-hidden="true"
+          >
+            <defs>
+              {/* Arc path: semicircle across the top */}
+              <path id="arch" d="M 8,38 A 32,32 0 0,1 72,38" fill="none" />
+            </defs>
+            <text
+              fontSize="9"
+              fontWeight="600"
+              letterSpacing="2.5"
+              fill="rgba(45,106,79,0.7)"
+              fontFamily="inherit"
+            >
+              <textPath href="#arch" startOffset="50%" textAnchor="middle">
+                GHARS
+              </textPath>
+            </text>
+          </svg>
+
+          <motion.button
+            onClick={() => setOpen((o) => !o)}
+            whileTap={{ scale: 0.92 }}
+            animate={pulse ? { scale: [1, 1.08, 1, 1.08, 1] } : { scale: 1 }}
+            transition={
+              pulse ? { duration: 2.2, ease: "easeInOut" } : { duration: 0.2 }
+            }
+            className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full
+              bg-[#faf7f0] border shadow-[0_6px_22px_-6px_rgba(45,106,79,0.35)]
+              ${
+                open
+                  ? "border-primary/50 shadow-[0_6px_26px_-4px_rgba(45,106,79,0.45)]"
+                  : "border-[rgba(45,106,79,0.3)] hover:border-primary/50"
+              }`}
+            aria-label={open ? "Close menu" : "Open navigation"}
+            aria-expanded={open}
+          >
+            <Image
+              src="/logo.png"
+              alt="Ghars"
+              width={30}
+              height={30}
+              className="select-none"
+            />
+          </motion.button>
+        </div>
       </div>
     </>
   );
