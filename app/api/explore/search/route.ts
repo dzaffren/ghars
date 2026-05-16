@@ -101,11 +101,17 @@ export async function POST(request: NextRequest) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
 
   // First attempt
-  let claudeResults = await callClaude(client, query).catch(() => null);
+  let claudeResults = await callClaude(client, query).catch((err) => {
+    console.error("[explore/search] Claude call failed:", err);
+    return null;
+  });
 
   // Retry once on null (malformed JSON or timeout)
   if (!claudeResults) {
-    claudeResults = await callClaude(client, query).catch(() => null);
+    claudeResults = await callClaude(client, query).catch((err) => {
+      console.error("[explore/search] Claude retry failed:", err);
+      return null;
+    });
   }
 
   if (!claudeResults) {
