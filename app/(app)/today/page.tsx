@@ -17,7 +17,7 @@ interface TodayData {
   ayah_number: number;
   arabic: string;
   translation: string;
-  tafsir_extract: string;
+  tafsir_extract: string | null;
   audio_url: string;
   prompts: string[];
   theme_label?: string;

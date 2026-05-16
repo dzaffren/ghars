@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminSupabaseClient();
   const { data: assignment } = await supabase
     .from("daily_assignments")
-    .select("id, verse_key, corpus_entries(action_prompt_1, action_prompt_2)")
+    .select(
+      "id, verse_key, exploration_prompt, corpus_entries(action_prompt_1, action_prompt_2)"
+    )
     .eq("id", assignment_id)
     .eq("user_id", session.userId)
     .single();
@@ -64,10 +66,11 @@ export async function POST(request: NextRequest) {
     action_prompt_1: string;
     action_prompt_2: string;
   } | null;
-  const prompts: [string, string] = [
-    ce?.action_prompt_1 ?? "",
-    ce?.action_prompt_2 ?? "",
-  ];
+  const prompts: string[] = ce
+    ? [ce.action_prompt_1, ce.action_prompt_2]
+    : (assignment as { exploration_prompt?: string | null }).exploration_prompt
+      ? [(assignment as { exploration_prompt: string }).exploration_prompt]
+      : [];
 
   const { result, error } = await commitMission({
     userId: session.userId,

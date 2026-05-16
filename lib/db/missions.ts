@@ -10,7 +10,7 @@ export async function commitMission(params: {
   assignmentId: string;
   selectedPrompt: string;
   isCustom: boolean;
-  prompts: [string, string];
+  prompts: string[];
 }): Promise<{
   result?: CommitResult;
   error?: { code: string; message: string; status: number };

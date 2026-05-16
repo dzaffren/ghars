@@ -10,7 +10,7 @@ interface Props {
   surah_name: string;
   ayah_number: number;
   audio_url: string;
-  tafsir_extract: string;
+  tafsir_extract: string | null;
   onExpandTafsir: () => void;
 }
 
@@ -92,13 +92,15 @@ export function AyahCard({
               />
             </div>
           )}
-          <button
-            onClick={() => setShowTafsir((v) => !v)}
-            className="text-xs text-white/75 transition-colors hover:text-white"
-            data-testid={showTafsir ? "tafsir-hide" : "tafsir-reveal"}
-          >
-            {showTafsir ? "Hide tafsir" : "See tafsir"}
-          </button>
+          {tafsir_extract && (
+            <button
+              onClick={() => setShowTafsir((v) => !v)}
+              className="text-xs text-white/75 transition-colors hover:text-white"
+              data-testid={showTafsir ? "tafsir-hide" : "tafsir-reveal"}
+            >
+              {showTafsir ? "Hide tafsir" : "See tafsir"}
+            </button>
+          )}
           {audio_url && (
             <audio
               ref={audioRef}
