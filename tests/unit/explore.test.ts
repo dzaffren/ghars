@@ -51,3 +51,50 @@ describe("verse key validation", () => {
     expect(re.test("abc:5")).toBe(false);
   });
 });
+
+// Pure JSON extraction helper — same logic as in the route
+function parseVerseResults(raw: string): Array<{
+  verse_key: string;
+  reason: string;
+  action_prompt: string;
+}> | null {
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) return null;
+  try {
+    const arr = JSON.parse(match[0]);
+    if (!Array.isArray(arr)) return null;
+    return arr.filter(
+      (item) =>
+        typeof item.verse_key === "string" &&
+        /^\d{1,3}:\d{1,3}$/.test(item.verse_key) &&
+        typeof item.reason === "string" &&
+        typeof item.action_prompt === "string"
+    );
+  } catch {
+    return null;
+  }
+}
+
+describe("parseVerseResults", () => {
+  it("extracts valid JSON array from Claude response", () => {
+    const raw = `Here are the verses:\n[{"verse_key":"94:5","reason":"ease after hardship","action_prompt":"Notice one ease today."}]`;
+    const result = parseVerseResults(raw);
+    expect(result).toHaveLength(1);
+    expect(result![0].verse_key).toBe("94:5");
+  });
+
+  it("filters out items with invalid verse keys", () => {
+    const raw = `[{"verse_key":"invalid","reason":"test","action_prompt":"do it"},{"verse_key":"2:255","reason":"ayat al-kursi","action_prompt":"recite it"}]`;
+    const result = parseVerseResults(raw);
+    expect(result).toHaveLength(1);
+    expect(result![0].verse_key).toBe("2:255");
+  });
+
+  it("returns null when no JSON array found", () => {
+    expect(parseVerseResults("No JSON here")).toBeNull();
+  });
+
+  it("returns null for malformed JSON", () => {
+    expect(parseVerseResults("[{broken}]")).toBeNull();
+  });
+});
