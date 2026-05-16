@@ -1,13 +1,11 @@
 import { createAdminSupabaseClient } from "../supabase/server";
 
-// day_of_year: 1-366
 function dayOfYear(date: Date): number {
   const start = new Date(date.getFullYear(), 0, 0);
   const diff = date.getTime() - start.getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-// Parse YYYY-MM-DD without timezone shift
 export function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
@@ -16,24 +14,24 @@ export function parseLocalDate(dateStr: string): Date {
 export interface Assignment {
   id: string;
   verse_key: string;
-  corpus_entry_id: number;
-  action_prompt_1: string;
-  action_prompt_2: string;
-  tafsir_extract: string;
+  corpus_entry_id: number | null;
+  action_prompt_1: string | null;
+  action_prompt_2: string | null;
+  tafsir_extract: string | null;
+  exploration_prompt: string | null;
 }
 
 export async function resolveOrCreateAssignment(
   userId: string,
-  localDate: string // YYYY-MM-DD
+  localDate: string
 ): Promise<Assignment | null> {
   const supabase = createAdminSupabaseClient();
 
-  // Check if assignment already exists
   const { data: existing } = await supabase
     .from("daily_assignments")
     .select(
       `
-      id, verse_key,
+      id, verse_key, exploration_prompt,
       corpus_entries ( id, action_prompt_1, action_prompt_2, tafsir_extract )
     `
     )
@@ -48,15 +46,32 @@ export async function resolveOrCreateAssignment(
       action_prompt_2: string;
       tafsir_extract: string;
     } | null;
-    if (!ce) return null;
-    return {
-      id: existing.id,
-      verse_key: existing.verse_key,
-      corpus_entry_id: ce.id,
-      action_prompt_1: ce.action_prompt_1,
-      action_prompt_2: ce.action_prompt_2,
-      tafsir_extract: ce.tafsir_extract,
-    };
+
+    if (ce) {
+      return {
+        id: existing.id,
+        verse_key: existing.verse_key,
+        corpus_entry_id: ce.id,
+        action_prompt_1: ce.action_prompt_1,
+        action_prompt_2: ce.action_prompt_2,
+        tafsir_extract: ce.tafsir_extract,
+        exploration_prompt: null,
+      };
+    }
+
+    if (existing.exploration_prompt) {
+      return {
+        id: existing.id,
+        verse_key: existing.verse_key,
+        corpus_entry_id: null,
+        action_prompt_1: null,
+        action_prompt_2: null,
+        tafsir_extract: null,
+        exploration_prompt: existing.exploration_prompt,
+      };
+    }
+
+    return null;
   }
 
   // Get user seed
@@ -75,10 +90,9 @@ export async function resolveOrCreateAssignment(
 
   if (!count || count === 0) return null;
 
-  // Deterministic selection
   const date = parseLocalDate(localDate);
   const doy = dayOfYear(date);
-  const idx = ((doy + seed) % count) + 1; // corpus_entries.id is serial starting at 1
+  const idx = ((doy + seed) % count) + 1;
 
   const { data: entry } = await supabase
     .from("corpus_entries")
@@ -90,7 +104,6 @@ export async function resolveOrCreateAssignment(
 
   if (!entry) return null;
 
-  // Create assignment (upsert to handle race conditions)
   const { data: newAssignment, error } = await supabase
     .from("daily_assignments")
     .upsert(
@@ -114,5 +127,6 @@ export async function resolveOrCreateAssignment(
     action_prompt_1: entry.action_prompt_1,
     action_prompt_2: entry.action_prompt_2,
     tafsir_extract: entry.tafsir_extract,
+    exploration_prompt: null,
   };
 }
