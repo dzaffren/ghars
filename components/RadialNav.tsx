@@ -57,12 +57,12 @@ function SparkleRing({ active }: { active: boolean }) {
   );
 }
 
-// 4 tabs: Explore left (180°), Journal left (135°), Today top (90°), Settings right (45°)
+// 4 tabs symmetrically spaced: 150°, 110°, 70°, 30° — two on each side
 const TABS = [
-  { href: "/explore", icon: Compass, label: "Explore", deg: 180 },
-  { href: "/journal", icon: BookOpen, label: "Journal", deg: 135 },
-  { href: "/today", icon: Home, label: "Today", deg: 90 },
-  { href: "/settings", icon: Settings, label: "Settings", deg: 45 },
+  { href: "/explore", icon: Compass, label: "Explore", deg: 150 },
+  { href: "/journal", icon: BookOpen, label: "Journal", deg: 110 },
+  { href: "/today", icon: Home, label: "Today", deg: 70 },
+  { href: "/settings", icon: Settings, label: "Settings", deg: 30 },
 ] as const;
 
 const RADIUS = 110; // distance from button centre to orbit item centre
