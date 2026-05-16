@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Home, BookOpen, Settings } from "lucide-react";
+import { Home, BookOpen, Settings, Compass } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const SPARKLES = [
@@ -57,8 +57,9 @@ function SparkleRing({ active }: { active: boolean }) {
   );
 }
 
-// 3 tabs: Journal left (135°), Today top (90°), Settings right (45°)
+// 4 tabs: Explore left (180°), Journal left (135°), Today top (90°), Settings right (45°)
 const TABS = [
+  { href: "/explore", icon: Compass, label: "Explore", deg: 180 },
   { href: "/journal", icon: BookOpen, label: "Journal", deg: 135 },
   { href: "/today", icon: Home, label: "Today", deg: 90 },
   { href: "/settings", icon: Settings, label: "Settings", deg: 45 },
