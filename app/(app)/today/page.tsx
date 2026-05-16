@@ -19,7 +19,8 @@ interface TodayData {
   translation: string;
   tafsir_extract: string;
   audio_url: string;
-  prompts: [string, string];
+  prompts: string[];
+  theme_label?: string;
   mission: {
     mission_id: string;
     selected_prompt: string;

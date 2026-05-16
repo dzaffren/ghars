@@ -114,6 +114,10 @@ export async function GET(request: NextRequest) {
     reflection = r ?? null;
   }
 
+  const prompts: string[] = assignment.exploration_prompt
+    ? [assignment.exploration_prompt]
+    : [assignment.action_prompt_1!, assignment.action_prompt_2!];
+
   return NextResponse.json({
     assignment_id: assignment.id,
     verse_key: assignment.verse_key,
@@ -124,7 +128,8 @@ export async function GET(request: NextRequest) {
     translation_id: "131",
     tafsir_extract: assignment.tafsir_extract,
     audio_url: audio.audio_url,
-    prompts: [assignment.action_prompt_1, assignment.action_prompt_2],
+    prompts,
+    theme_label: assignment.exploration_prompt ? "Your choice" : undefined,
     mission: mission
       ? {
           mission_id: mission.id,

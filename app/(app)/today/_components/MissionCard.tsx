@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface Props {
-  prompts: [string, string];
+  prompts: string[];
   mode: "pre_commit" | "committed";
   committed_text?: string;
   selectedPrompt: string;
