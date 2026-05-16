@@ -98,3 +98,24 @@ describe("parseVerseResults", () => {
     expect(parseVerseResults("[{broken}]")).toBeNull();
   });
 });
+
+// Pure date helper — same logic used in the assign route
+function nextDay(localDate: string): string {
+  const [y, m, d] = localDate.split("-").map(Number);
+  const date = new Date(y, m - 1, d + 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+describe("nextDay", () => {
+  it("advances a normal date", () => {
+    expect(nextDay("2026-05-15")).toBe("2026-05-16");
+  });
+
+  it("rolls over month boundary", () => {
+    expect(nextDay("2026-05-31")).toBe("2026-06-01");
+  });
+
+  it("rolls over year boundary", () => {
+    expect(nextDay("2026-12-31")).toBe("2027-01-01");
+  });
+});
