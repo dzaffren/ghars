@@ -69,8 +69,10 @@ export async function GET(request: NextRequest) {
 
   const supabase = createAdminSupabaseClient();
 
-  // Upsert user
-  const { data: user, error: userError } = await supabase
+  // Upsert by qf_user_id. If the email already exists under a different
+  // qf_user_id (e.g. from seed data), claim that row by updating its
+  // qf_user_id to the real one so the user can sign in.
+  let { data: user, error: userError } = await supabase
     .from("users")
     .upsert(
       { qf_user_id: qfUserId, email, display_name: displayName },
@@ -78,6 +80,23 @@ export async function GET(request: NextRequest) {
     )
     .select("id, is_demo")
     .single();
+
+  if (userError && email) {
+    // Likely a unique-email conflict from a seed/demo row with a different qf_user_id.
+    // Claim the existing row by patching its qf_user_id to the real one.
+    console.warn(
+      "Upsert by qf_user_id failed, attempting email-based claim:",
+      userError.message
+    );
+    const { data: claimed, error: claimError } = await supabase
+      .from("users")
+      .update({ qf_user_id: qfUserId, display_name: displayName })
+      .eq("email", email)
+      .select("id, is_demo")
+      .single();
+    user = claimed ?? null;
+    userError = claimError ?? null;
+  }
 
   if (userError || !user) {
     console.error("User upsert failed:", userError);
