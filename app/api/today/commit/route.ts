@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
 
   // Verify assignment belongs to this user
   const supabase = createAdminSupabaseClient();
-  const { data: assignment, error: assignmentError } = await supabase
+  const { data: assignment } = await supabase
     .from("daily_assignments")
     .select("id, verse_key, exploration_prompt, corpus_entry_id")
     .eq("id", assignment_id)
     .eq("user_id", session.userId)
-    .single();
+    .maybeSingle();
 
-  if (assignmentError || !assignment) {
+  if (!assignment) {
     return NextResponse.json(
       {
         error: {
