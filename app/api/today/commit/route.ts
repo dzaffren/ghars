@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       {
         error: {
           code: "ASSIGNMENT_NOT_FOUND",
-          message: `No assignment found with id ${assignment_id}`,
+          message: `[DEBUG-v1] No assignment found with id ${assignment_id}`,
         },
       },
       { status: 404 }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       {
         error: {
           code: "ASSIGNMENT_NOT_FOUND",
-          message: `Assignment user_id mismatch: assignment belongs to ${assignmentCheck.user_id}, session user is ${session.userId}`,
+          message: `[DEBUG-v1] Assignment user_id mismatch: assignment=${assignmentCheck.user_id}, session=${session.userId}`,
         },
       },
       { status: 404 }
