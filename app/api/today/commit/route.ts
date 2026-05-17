@@ -41,16 +41,14 @@ export async function POST(request: NextRequest) {
 
   // Verify assignment belongs to this user
   const supabase = createAdminSupabaseClient();
-  const { data: assignment } = await supabase
+  const { data: assignment, error: assignmentError } = await supabase
     .from("daily_assignments")
-    .select(
-      "id, verse_key, exploration_prompt, corpus_entries(action_prompt_1, action_prompt_2)"
-    )
+    .select("id, verse_key, exploration_prompt, corpus_entry_id")
     .eq("id", assignment_id)
     .eq("user_id", session.userId)
     .single();
 
-  if (!assignment) {
+  if (assignmentError || !assignment) {
     return NextResponse.json(
       {
         error: {
@@ -62,15 +60,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ce = assignment.corpus_entries as unknown as {
-    action_prompt_1: string;
-    action_prompt_2: string;
-  } | null;
-  const prompts: string[] = ce
-    ? [ce.action_prompt_1, ce.action_prompt_2]
-    : (assignment as { exploration_prompt?: string | null }).exploration_prompt
-      ? [(assignment as { exploration_prompt: string }).exploration_prompt]
-      : [];
+  // Fetch prompts based on source (corpus or exploration)
+  let prompts: string[] = [];
+  if (assignment.corpus_entry_id) {
+    const { data: corpus } = await supabase
+      .from("corpus_entries")
+      .select("action_prompt_1, action_prompt_2")
+      .eq("id", assignment.corpus_entry_id)
+      .single();
+    if (corpus) {
+      prompts = [corpus.action_prompt_1, corpus.action_prompt_2];
+    }
+  } else if (assignment.exploration_prompt) {
+    prompts = [assignment.exploration_prompt];
+  }
 
   const { result, error } = await commitMission({
     userId: session.userId,
