@@ -10,6 +10,7 @@ interface VerseResult {
   action_prompt: string;
   arabic: string;
   translation: string;
+  audio_url: string;
 }
 
 export default function ExplorePage() {

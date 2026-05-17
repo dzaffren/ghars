@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getSession } from "@/lib/session";
-import { getVerseByKey, getTranslation } from "@/lib/qf/content";
+import { getVerseByKey, getTranslation, getAudioUrl } from "@/lib/qf/content";
 
 const VERSE_KEY_RE = /^\d{1,3}:\d{1,3}$/;
 const SEARCH_TIMEOUT_MS = 8000;
@@ -129,9 +129,10 @@ export async function POST(request: NextRequest) {
   // Fetch QF content for all verses in parallel; drop failures silently
   const settled = await Promise.allSettled(
     claudeResults.map(async (item) => {
-      const [verse, translation] = await Promise.all([
+      const [verse, translation, audio] = await Promise.all([
         getVerseByKey(item.verse_key),
         getTranslation(item.verse_key, "131"),
+        getAudioUrl(item.verse_key),
       ]);
       return {
         verse_key: item.verse_key,
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         action_prompt: item.action_prompt,
         arabic: verse.arabic,
         translation: translation.text,
+        audio_url: audio.audio_url,
       };
     })
   );
@@ -149,6 +151,7 @@ export async function POST(request: NextRequest) {
     action_prompt: string;
     arabic: string;
     translation: string;
+    audio_url: string;
   }> = [];
   for (const r of settled) {
     if (r.status === "fulfilled") results.push(r.value);

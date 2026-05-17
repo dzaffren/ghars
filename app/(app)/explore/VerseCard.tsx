@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Bookmark, ChevronDown, ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import { Bookmark } from "lucide-react";
+import { GradientCard } from "@/components/ui/gradient-card";
 
 interface VerseResult {
   verse_key: string;
@@ -10,6 +10,7 @@ interface VerseResult {
   action_prompt: string;
   arabic: string;
   translation: string;
+  audio_url: string;
 }
 
 interface Props {
@@ -19,31 +20,30 @@ interface Props {
 }
 
 export function VerseCard({ result, localDate, onAssigned }: Props) {
-  const [tafsirOpen, setTafsirOpen] = useState(false);
-  const [tafsirHtml, setTafsirHtml] = useState<string | null>(null);
-  const [tafsirLoading, setTafsirLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [assigned, setAssigned] = useState(false);
 
-  async function handleTafsirToggle() {
-    if (tafsirOpen) {
-      setTafsirOpen(false);
-      return;
+  function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play();
+      setPlaying(true);
     }
-    setTafsirOpen(true);
-    if (tafsirHtml !== null) return;
-    setTafsirLoading(true);
-    try {
-      const res = await fetch(`/api/content/tafsir/${result.verse_key}`);
-      const data = await res.json();
-      setTafsirHtml(data.text ?? null);
-    } catch {
-      setTafsirHtml(null);
-    } finally {
-      setTafsirLoading(false);
-    }
+  }
+
+  function onTimeUpdate() {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    setProgress((audio.currentTime / audio.duration) * 100);
   }
 
   async function handleBookmark() {
@@ -89,113 +89,102 @@ export function VerseCard({ result, localDate, onAssigned }: Props) {
   }
 
   return (
-    <div
-      className="rounded-2xl p-6 shadow-sm"
-      style={{ backgroundColor: "white" }}
-    >
-      {/* Section label — matches MissionCard "Today's mission" style */}
-      <p
-        className="text-xs uppercase tracking-widest mb-3"
-        style={{ color: "var(--grove-green)" }}
-      >
-        {result.verse_key}
-      </p>
+    <div className="flex flex-col gap-3">
+      {/* Green gradient card — matches AyahCard */}
+      <GradientCard className="w-full">
+        <div className="flex flex-col gap-3 px-5 py-4 text-white">
+          <p className="text-xs opacity-50">{result.verse_key}</p>
 
-      {/* Arabic */}
-      <p
-        className="text-2xl leading-loose text-right mb-3"
-        dir="rtl"
-        lang="ar"
-        translate="no"
-        style={{ color: "var(--foreground)" }}
-      >
-        {result.arabic}
-      </p>
-
-      {/* Translation */}
-      <p
-        className="text-base font-medium leading-relaxed mb-2"
-        style={{ color: "var(--foreground)" }}
-      >
-        {result.translation}
-      </p>
-
-      {/* Reason */}
-      <p className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
-        ✦ {result.reason}
-      </p>
-
-      {/* Tafsir + bookmark row */}
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          onClick={handleTafsirToggle}
-          className="flex items-center gap-1 text-xs font-medium"
-          style={{ color: "var(--grove-green)" }}
-        >
-          Tafsir{" "}
-          {tafsirOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </button>
-
-        <button
-          onClick={handleBookmark}
-          disabled={bookmarked || bookmarking}
-          aria-label={bookmarked ? "Bookmarked" : "Bookmark this verse"}
-          className="ml-auto p-1.5 rounded-full transition-colors"
-          style={{
-            color: bookmarked ? "var(--grove-green)" : "var(--text-muted)",
-            backgroundColor: bookmarked
-              ? "rgba(45,106,79,0.08)"
-              : "transparent",
-          }}
-        >
-          <Bookmark size={15} fill={bookmarked ? "currentColor" : "none"} />
-        </button>
-      </div>
-
-      {/* Tafsir expand */}
-      <AnimatePresence>
-        {tafsirOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden mb-4"
+          <p
+            className="text-2xl leading-loose text-right text-white"
+            dir="rtl"
+            lang="ar"
+            translate="no"
           >
-            {tafsirLoading ? (
-              <div
-                className="h-16 rounded-lg animate-pulse"
-                style={{ backgroundColor: "var(--cream-deep, #f3ede0)" }}
-              />
-            ) : tafsirHtml ? (
-              <div
-                className="text-xs leading-relaxed prose prose-sm max-w-none"
-                style={{ color: "var(--text-muted)" }}
-                dangerouslySetInnerHTML={{ __html: tafsirHtml }}
-              />
-            ) : (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Tafsir unavailable for this verse.
-              </p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {result.arabic}
+          </p>
 
-      {/* Full-width assign button — matches MissionCard commit button */}
-      <button
-        onClick={handleAssign}
-        disabled={assigning || assigned}
-        className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50"
-        style={{
-          backgroundColor: assigned
-            ? "rgba(45,106,79,0.15)"
-            : "var(--grove-green)",
-          color: assigned ? "var(--grove-green)" : "white",
-        }}
+          <p className="text-sm leading-relaxed text-white/90">
+            {result.translation}
+          </p>
+
+          <div className="flex items-center gap-3">
+            {result.audio_url && (
+              <button
+                onClick={togglePlay}
+                className="flex items-center gap-1.5 rounded-full border border-white/20 px-2.5 py-1 text-xs text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label={playing ? "Pause recitation" : "Play recitation"}
+              >
+                <span className="text-[10px] leading-none">
+                  {playing ? "⏸" : "▶"}
+                </span>
+                <span className="leading-none">Listen</span>
+              </button>
+            )}
+            {result.audio_url && progress > 0 && (
+              <div className="h-1 w-16 rounded-full bg-white/15">
+                <div
+                  className="h-1 rounded-full bg-white/70"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            )}
+            {result.audio_url && (
+              <audio
+                ref={audioRef}
+                src={result.audio_url}
+                onTimeUpdate={onTimeUpdate}
+                onEnded={() => setPlaying(false)}
+              />
+            )}
+          </div>
+        </div>
+      </GradientCard>
+
+      {/* Action card below — white, matches MissionCard */}
+      <div
+        className="rounded-2xl px-5 py-4 shadow-sm flex flex-col gap-3"
+        style={{ backgroundColor: "white" }}
       >
-        {assigned ? "Mission set ✓" : assigning ? "Setting…" : "Set as mission"}
-      </button>
+        <p className="text-xs italic" style={{ color: "var(--text-muted)" }}>
+          ✦ {result.reason}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBookmark}
+            disabled={bookmarked || bookmarking}
+            aria-label={bookmarked ? "Bookmarked" : "Bookmark this verse"}
+            className="p-1.5 rounded-full transition-colors"
+            style={{
+              color: bookmarked ? "var(--grove-green)" : "var(--text-muted)",
+              backgroundColor: bookmarked
+                ? "rgba(45,106,79,0.08)"
+                : "transparent",
+            }}
+          >
+            <Bookmark size={15} fill={bookmarked ? "currentColor" : "none"} />
+          </button>
+
+          <button
+            onClick={handleAssign}
+            disabled={assigning || assigned}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+            style={{
+              backgroundColor: assigned
+                ? "rgba(45,106,79,0.1)"
+                : "var(--grove-green)",
+              color: assigned ? "var(--grove-green)" : "white",
+            }}
+          >
+            {assigned
+              ? "Mission set ✓"
+              : assigning
+                ? "Setting…"
+                : "Set as mission"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
