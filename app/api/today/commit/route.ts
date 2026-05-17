@@ -42,32 +42,19 @@ export async function POST(request: NextRequest) {
   // Verify assignment belongs to this user
   const supabase = createAdminSupabaseClient();
 
-  // Debug: log the query we're about to run
-  console.log("[COMMIT] Looking for assignment:", assignment_id);
-  console.log("[COMMIT] Session user_id:", session.userId);
-  console.log("[COMMIT] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-
   // Fetch assignment with all needed fields
-  const { data: assignment, error: queryError } = await supabase
+  const { data: assignment } = await supabase
     .from("daily_assignments")
     .select("id, user_id, verse_key, corpus_entry_id")
     .eq("id", assignment_id)
     .maybeSingle();
-
-  console.log("[COMMIT] Query result - data:", assignment);
-  console.log("[COMMIT] Query result - error:", queryError);
 
   if (!assignment) {
     return NextResponse.json(
       {
         error: {
           code: "ASSIGNMENT_NOT_FOUND",
-          message: `No assignment found with ID ${assignment_id}`,
-          debug: {
-            query_error: queryError?.message ?? null,
-            session_user_id: session.userId,
-            assignment_id_searched: assignment_id,
-          },
+          message: "Assignment not found",
         },
       },
       { status: 404 }
