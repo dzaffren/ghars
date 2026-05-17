@@ -62,7 +62,12 @@ export async function POST(request: NextRequest) {
       {
         error: {
           code: "ASSIGNMENT_NOT_FOUND",
-          message: `No assignment found with ID ${assignment_id}. Check server logs for details.`,
+          message: `No assignment found with ID ${assignment_id}`,
+          debug: {
+            query_error: queryError?.message ?? null,
+            session_user_id: session.userId,
+            assignment_id_searched: assignment_id,
+          },
         },
       },
       { status: 404 }
