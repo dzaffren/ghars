@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   // Fetch assignment with all needed fields
   const { data: assignment, error: queryError } = await supabase
     .from("daily_assignments")
-    .select("id, user_id, verse_key, exploration_prompt, corpus_entry_id")
+    .select("id, user_id, verse_key, corpus_entry_id")
     .eq("id", assignment_id)
     .maybeSingle();
 
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Fetch prompts based on source (corpus or exploration)
+  // Fetch prompts from corpus_entry
   let prompts: string[] = [];
   if (assignment.corpus_entry_id) {
     const { data: corpus } = await supabase
@@ -97,8 +97,6 @@ export async function POST(request: NextRequest) {
     if (corpus) {
       prompts = [corpus.action_prompt_1, corpus.action_prompt_2];
     }
-  } else if (assignment.exploration_prompt) {
-    prompts = [assignment.exploration_prompt];
   }
 
   const { result, error } = await commitMission({
