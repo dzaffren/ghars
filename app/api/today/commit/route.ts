@@ -42,42 +42,11 @@ export async function POST(request: NextRequest) {
   // Verify assignment belongs to this user
   const supabase = createAdminSupabaseClient();
 
-  // Debug: check if assignment exists at all
-  const { data: assignmentCheck } = await supabase
-    .from("daily_assignments")
-    .select("id, user_id")
-    .eq("id", assignment_id)
-    .maybeSingle();
-
-  if (!assignmentCheck) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "ASSIGNMENT_NOT_FOUND",
-          message: `[DEBUG-v1] No assignment found with id ${assignment_id}`,
-        },
-      },
-      { status: 404 }
-    );
-  }
-
-  if (assignmentCheck.user_id !== session.userId) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "ASSIGNMENT_NOT_FOUND",
-          message: `[DEBUG-v1] Assignment user_id mismatch: assignment=${assignmentCheck.user_id}, session=${session.userId}`,
-        },
-      },
-      { status: 404 }
-    );
-  }
-
+  // Fetch assignment with all needed fields
   const { data: assignment } = await supabase
     .from("daily_assignments")
-    .select("id, verse_key, exploration_prompt, corpus_entry_id")
+    .select("id, user_id, verse_key, exploration_prompt, corpus_entry_id")
     .eq("id", assignment_id)
-    .eq("user_id", session.userId)
     .maybeSingle();
 
   if (!assignment) {
@@ -85,10 +54,22 @@ export async function POST(request: NextRequest) {
       {
         error: {
           code: "ASSIGNMENT_NOT_FOUND",
-          message: "Assignment not found or not owned by user",
+          message: "No assignment found with that ID",
         },
       },
       { status: 404 }
+    );
+  }
+
+  if (assignment.user_id !== session.userId) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "ASSIGNMENT_NOT_FOUND",
+          message: "Assignment does not belong to current user",
+        },
+      },
+      { status: 403 }
     );
   }
 
