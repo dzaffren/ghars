@@ -79,8 +79,8 @@ function compositeDemo(bgPng, seek, duration, outPath) {
     '-loop', '1', '-i', bgPng,
     '-loop', '1', '-i', PHONE_FRAME,
     '-filter_complex',
+      '[0:v]crop=430:640:745:0,scale=390:-2,pad=390:844:0:0:#f5f0e8[app];' +
       '[1:v]scale=1920:1080[bg];' +
-      '[0:v]scale=390:844[app];' +
       '[bg][app]overlay=1105:118[with_app];' +
       '[with_app][2:v]overlay=0:0:format=auto[out]',
     '-map', '[out]',
