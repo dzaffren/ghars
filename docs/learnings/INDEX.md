@@ -12,3 +12,4 @@ file in this directory. The active ruleset is synced into the repo's
 - [qf-user-api-base](blocker-qf-user-api-base.md) — QF User APIs base path is `{host}/auth/v1`, confirmed from user-apis-quickstart docs
 - [playwright-demo-auth](pattern-playwright-demo-auth.md) — E2E tests must use `page.request.post` for demo login, not the fixture `request` object
 - [app-route-middleware](convention-app-route-middleware.md) — All `(app)` routes require middleware auth guard; pages do not self-check sessions
+- [qf-oauth-base-url](blocker-qf-oauth-base-url.md) — Production QF OAuth2 base URL is `https://auth.quran.com`, not `https://oauth2.quran.foundation`

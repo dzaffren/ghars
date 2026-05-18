@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
 const QF_OAUTH_BASE = (
-  process.env.QF_OAUTH_BASE ?? "https://oauth2.quran.foundation"
+  process.env.QF_OAUTH_BASE ?? "https://auth.quran.com"
 ).replace(/\/$/, "");
 const QF_CLIENT_ID = process.env.QF_CLIENT_ID ?? "";
 const QF_CLIENT_SECRET = process.env.QF_CLIENT_SECRET ?? "";

@@ -10,3 +10,4 @@
 - **QF User API base** — User APIs (bookmarks, notes, streaks etc.) base path is `{host}/auth/v1`. See `docs/learnings/blocker-qf-user-api-base.md`.
 - **Playwright demo auth** — E2E tests must use `page.request.post()` for demo login, not the `request` fixture. See `docs/learnings/pattern-playwright-demo-auth.md`.
 - **App route middleware** — Pages under `app/(app)/` rely on `middleware.ts` for auth; do not add session checks to page components. See `docs/learnings/convention-app-route-middleware.md`.
+- **QF OAuth base URL** — Production QF OAuth2 base URL is `https://auth.quran.com`, not `https://oauth2.quran.foundation`. See `docs/learnings/blocker-qf-oauth-base-url.md`.
