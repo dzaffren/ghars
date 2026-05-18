@@ -18,15 +18,15 @@ One verse, each morning. One specific mission you can carry into your day. One r
 
 Open the app — your verse for today is already waiting. Selected from the Quran Foundation Content API, weighted to your chosen focus areas, personalised to you.
 
-Every Arabic word is tappable. See the root and meaning. Pull up Ibn Kathir's tafsir — live, from the Quran Foundation.
+One tap reveals Ibn Kathir's full tafsir — live, from the Quran Foundation.
 
-When you're ready, write your reflection. Thirty seconds is enough. Claude evaluates depth on a scale of one to five, and returns a concrete, personalised suggestion for what to do next.
+When you're ready, write your reflection. Thirty seconds is enough. Claude reads your reflection and gives back two things — a fresh insight into the ayah, and a one-line observation drawn from what you actually wrote.
 
 Submit. And your plant grows.
 
 Your grove fills in, one reflection at a time. Miss a day — it wilts. Come back — it recovers. The garden is an honest record of your practice.
 
-Bookmarks sync directly to the Quran Foundation User API — written to your QF account, not stored locally. Your platform streak sits right next to your Ghars streak, so your growth here travels with you to Quran dot com.
+Bookmarks sync to the Quran Foundation User API — written to your QF account. Your streak syncs there too, so your Ghars practice travels with you to Quran dot com.
 
 Four Quran Foundation Content APIs. Three User APIs. Every integration load-bearing. Every one something the user actually feels.
 
@@ -44,7 +44,7 @@ Use this as a guide when aligning screen clips in CapCut:
 | Problem | 0:08–0:34 | "Most Quran apps…" |
 | Thesis | 0:34–0:49 | "One verse…" |
 | Demo — verse on screen | 0:49–1:01 | "Open the app…" |
-| Demo — tappable word | 1:01–1:11 | "Every Arabic word…" |
+| Demo — tafsir tap | 1:01–1:11 | "One tap reveals…" |
 | Demo — reflection submit | 1:11–1:30 | "When you're ready…" |
 | Demo — plant grows | 1:30–1:36 | "Submit." (pause here) |
 | Demo — grove + streak | 1:36–1:50 | "Your grove…" |
