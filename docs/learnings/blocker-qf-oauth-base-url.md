@@ -6,10 +6,10 @@ captured: 2026-05-18
 source: live debugging session
 ---
 
-The production QF OAuth2 server base URL is `https://auth.quran.com`. The URL `https://oauth2.quran.foundation` does not host the OAuth2 endpoints for production clients — using it returns `invalid_client` / "The requested OAuth 2.0 Client does not exist" even with a valid client ID.
+The production QF OAuth2 server base URL is `https://oauth2.quran.foundation`. The error redirect lands on `https://auth.quran.com/oauth-error` because `auth.quran.com` is the QF UI host, but the OAuth2 API base remains `https://oauth2.quran.foundation`.
 
-**Why:** Confirmed by inspecting the error redirect URL from QF: `https://auth.quran.com/oauth-error?error=invalid_client&...`. The auth server is at `auth.quran.com`.
+**Why:** Confirmed by QF support. The `/oauth2/auth` and `/oauth2/token` endpoints are served at `oauth2.quran.foundation`.
 
-**How to apply:** Set `QF_OAUTH_BASE=https://auth.quran.com` in Vercel (production). The default in `lib/qf/oauth.ts` is now `https://auth.quran.com`. Do not use `https://oauth2.quran.foundation`.
+**How to apply:** Set `QF_OAUTH_BASE=https://oauth2.quran.foundation` in Vercel. The default in `lib/qf/oauth.ts` is `https://oauth2.quran.foundation`.
 
 **What was tried:** `https://oauth2.quran.foundation` — returns `invalid_client` for all production client IDs.
