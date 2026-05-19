@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getSession } from "@/lib/session";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { getVerseByKey, getTranslation, getAudioUrl } from "@/lib/qf/content";
 
 const VERSE_KEY_RE = /^\d{1,3}:\d{1,3}$/;
 const SEARCH_TIMEOUT_MS = 8000;
 const MODEL = "claude-haiku-4-5-20251001";
+
+const DAILY_SEARCH_LIMIT = Number(process.env.DAILY_SEARCH_LIMIT ?? "20");
+const GLOBAL_DAILY_CAP = Number(process.env.GLOBAL_DAILY_SEARCH_CAP ?? "500");
 
 const SYSTEM_PROMPT = `You are a Quran scholar. Given a user's theme, feeling, or situation, return the 5 most relevant Quran verses. Respond with valid JSON only — an array of exactly 5 objects:
 [{"verse_key":"<surah>:<ayah>","reason":"<one sentence, max 15 words, lowercase>","action_prompt":"<one specific actionable sentence derived from the verse and the user's query, max 20 words>"}]
@@ -96,6 +100,80 @@ export async function POST(request: NextRequest) {
       },
       { status: 400 }
     );
+  }
+
+  // ── Rate limiting ─────────────────────────────────────────────────────────
+  const supabase = createAdminSupabaseClient();
+  const now = new Date();
+
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("id, search_count_today, search_quota_reset_at")
+    .eq("id", session.userId)
+    .single();
+
+  if (userRow) {
+    const resetAt = new Date(userRow.search_quota_reset_at);
+    const isNewDay = now.getTime() - resetAt.getTime() >= 24 * 60 * 60 * 1000;
+    const count = isNewDay ? 0 : (userRow.search_count_today ?? 0);
+
+    if (count >= DAILY_SEARCH_LIMIT) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: "Daily search limit reached — come back tomorrow",
+          },
+        },
+        { status: 429 }
+      );
+    }
+
+    // Check global daily cap via total searches across all users today
+    const { count: globalCount } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .gte(
+        "search_quota_reset_at",
+        new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+      )
+      .gt("search_count_today", 0);
+
+    // Rough global guard: sum is not perfect but good enough for hackathon
+    if ((globalCount ?? 0) > 0) {
+      const { data: globalRows } = await supabase
+        .from("users")
+        .select("search_count_today")
+        .gte(
+          "search_quota_reset_at",
+          new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+        );
+      const totalToday = (globalRows ?? []).reduce(
+        (s, r) => s + (r.search_count_today ?? 0),
+        0
+      );
+      if (totalToday >= GLOBAL_DAILY_CAP) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "GLOBAL_LIMIT",
+              message: "Search is temporarily unavailable — try again tomorrow",
+            },
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    // Increment — reset window if new day
+    await supabase
+      .from("users")
+      .update(
+        isNewDay
+          ? { search_count_today: 1, search_quota_reset_at: now.toISOString() }
+          : { search_count_today: count + 1 }
+      )
+      .eq("id", session.userId);
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
