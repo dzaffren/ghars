@@ -2,9 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DidApply = "yes_fully" | "partly" | "not_today";
+
+interface BookmarkedAyah {
+  verse_key: string;
+  created_at: string;
+}
 
 interface CalendarMark {
   local_date: string;
@@ -47,11 +52,19 @@ export default function JournalPage() {
   const router = useRouter();
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [weeks, setWeeks] = useState<{ id: number; week_number: number }[]>([]);
+  const [bookmarkedAyahs, setBookmarkedAyahs] = useState<BookmarkedAyah[]>([]);
 
   useEffect(() => {
     fetch("/api/weeks")
       .then((r) => r.json())
       .then((d) => setWeeks(d.weeks ?? []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/bookmarks")
+      .then((r) => r.json())
+      .then((d) => setBookmarkedAyahs(d.bookmarks ?? []))
       .catch(() => {});
   }, []);
 
@@ -76,6 +89,17 @@ export default function JournalPage() {
           >
             Week {weeks[0].week_number} — see what Allah guided you through →
           </button>
+        )}
+
+        {bookmarkedAyahs.length > 0 && (
+          <BookmarkedAyahsSection
+            ayahs={bookmarkedAyahs}
+            onRemove={(verseKey) =>
+              setBookmarkedAyahs((prev) =>
+                prev.filter((a) => a.verse_key !== verseKey)
+              )
+            }
+          />
         )}
 
         <div
@@ -103,6 +127,60 @@ export default function JournalPage() {
         {view === "calendar" ? <CalendarView /> : <ListView />}
       </div>
     </main>
+  );
+}
+
+function BookmarkedAyahsSection({
+  ayahs,
+  onRemove,
+}: {
+  ayahs: BookmarkedAyah[];
+  onRemove: (verseKey: string) => void;
+}) {
+  async function handleRemove(verseKey: string) {
+    await fetch("/api/bookmarks", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ verse_key: verseKey }),
+    });
+    onRemove(verseKey);
+  }
+
+  return (
+    <div
+      className="rounded-2xl p-4 shadow-sm flex flex-col gap-3"
+      style={{ backgroundColor: "white" }}
+      data-testid="bookmarked-ayahs-section"
+    >
+      <p
+        className="text-xs font-semibold uppercase tracking-widest"
+        style={{ color: "var(--grove-green)" }}
+      >
+        Bookmarked Ayahs
+      </p>
+      {ayahs.map((ayah) => (
+        <div
+          key={ayah.verse_key}
+          className="flex items-center justify-between"
+          data-testid={`bookmarked-ayah-${ayah.verse_key}`}
+        >
+          <p
+            className="text-sm font-medium"
+            style={{ color: "var(--foreground)" }}
+          >
+            {ayah.verse_key}
+          </p>
+          <button
+            onClick={() => handleRemove(ayah.verse_key)}
+            aria-label={`Remove bookmark for ${ayah.verse_key}`}
+            className="p-1 rounded-md transition-colors hover:bg-black/5"
+            style={{ color: "var(--grove-green)" }}
+          >
+            <Bookmark size={16} fill="currentColor" />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 

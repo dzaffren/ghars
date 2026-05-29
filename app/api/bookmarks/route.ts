@@ -4,6 +4,21 @@ import { addBookmark, removeBookmark } from "@/lib/db/journal";
 import { addQFBookmark, removeQFBookmark } from "@/lib/qf/bookmarks";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
+export async function GET() {
+  const session = await getSession();
+  if (!session)
+    return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+
+  const supabase = createAdminSupabaseClient();
+  const { data } = await supabase
+    .from("bookmarks_mirror")
+    .select("verse_key, created_at")
+    .eq("user_id", session.userId)
+    .order("created_at", { ascending: false });
+
+  return NextResponse.json({ bookmarks: data ?? [] });
+}
+
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session)
