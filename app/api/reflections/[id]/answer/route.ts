@@ -13,10 +13,6 @@ import { getTranslation, getFullTafsir, getVerseByKey } from "@/lib/qf/content";
 
 const DAILY_RATE_LIMIT = 10;
 
-function isEnabled(): boolean {
-  return process.env.ENABLE_ANSWERED_REFLECTION === "true";
-}
-
 async function loadVerseContext(verseKey: string): Promise<{
   ayahArabic: string;
   ayahTranslation: string;
@@ -97,18 +93,6 @@ export async function POST(
     return NextResponse.json(
       { error: { code: "UNAUTHENTICATED", message: "Session required" } },
       { status: 401 }
-    );
-  }
-
-  if (!isEnabled()) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "FEATURE_DISABLED",
-          message: "Answered reflection is disabled",
-        },
-      },
-      { status: 503 }
     );
   }
 

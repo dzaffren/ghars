@@ -82,6 +82,15 @@ export default function TodayPage() {
       });
   }, []);
 
+  function refreshGrove() {
+    fetch("/api/grove")
+      .then((r) => r.json())
+      .then((g) => {
+        if (g && !g.error) setGrove(g);
+      })
+      .catch(() => {});
+  }
+
   const treeState: TreeState = {
     growthPoints: (grove?.trees?.length ?? 0) * 5,
     currentStreak: grove?.streak_days ?? 0,
@@ -207,6 +216,7 @@ export default function TodayPage() {
             existingDidApply={data.reflection?.did_apply}
             existingText={data.reflection?.text}
             windowClosesAt={data.reflection?.window_closes_at}
+            onGroveUpdate={refreshGrove}
           />
         )}
       </div>

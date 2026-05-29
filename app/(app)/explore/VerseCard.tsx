@@ -149,8 +149,9 @@ export function VerseCard({ result, localDate, onAssigned }: Props) {
           <button
             onClick={handleBookmark}
             disabled={bookmarked || bookmarking}
-            aria-label={bookmarked ? "Bookmarked" : "Bookmark this verse"}
-            className="p-1.5 rounded-full transition-colors"
+            aria-label={bookmarked ? "Saved to Journal" : "Bookmark this verse"}
+            title={bookmarked ? "Saved to Journal" : "Bookmark this verse"}
+            className="flex items-center gap-1 rounded-full px-2 py-1.5 transition-colors"
             style={{
               color: bookmarked ? "var(--grove-green)" : "var(--text-muted)",
               backgroundColor: bookmarked
@@ -159,6 +160,11 @@ export function VerseCard({ result, localDate, onAssigned }: Props) {
             }}
           >
             <Bookmark size={15} fill={bookmarked ? "currentColor" : "none"} />
+            {bookmarked && (
+              <span className="text-xs font-medium leading-none">
+                Saved to Journal
+              </span>
+            )}
           </button>
 
           <button

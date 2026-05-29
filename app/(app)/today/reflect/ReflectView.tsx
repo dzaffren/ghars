@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnswerCard } from "../_components/AnswerCard";
 
 type DidApply = "yes_fully" | "partly" | "not_today";
@@ -33,6 +32,7 @@ interface Props {
   existingDidApply?: DidApply;
   existingText?: string;
   windowClosesAt?: string;
+  onGroveUpdate?: () => void;
 }
 
 export function ReflectView({
@@ -44,8 +44,8 @@ export function ReflectView({
   existingDidApply,
   existingText,
   windowClosesAt,
+  onGroveUpdate,
 }: Props) {
-  const router = useRouter();
   const [didApply, setDidApply] = useState<DidApply | null>(null);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -55,8 +55,18 @@ export function ReflectView({
   const [syncStatus, setSyncStatus] = useState<
     "synced" | "retry_queued" | null
   >(null);
+  // Track local submission so alreadySubmitted is true when phase resets to
+  // "idle" after planting, without waiting for the parent to re-fetch data.
+  const [localSubmittedDidApply, setLocalSubmittedDidApply] =
+    useState<DidApply | null>(null);
+  const [localSubmittedText, setLocalSubmittedText] = useState<string | null>(
+    null
+  );
 
-  const alreadySubmitted = !!existingReflectionId;
+  const alreadySubmitted =
+    !!existingReflectionId || localSubmittedDidApply !== null;
+  const effectiveDidApply = existingDidApply ?? localSubmittedDidApply;
+  const effectiveText = existingText ?? localSubmittedText;
   const windowClosed = windowClosesAt
     ? new Date() >= new Date(windowClosesAt)
     : false;
@@ -82,6 +92,8 @@ export function ReflectView({
     setSubmitting(false);
 
     if (res.ok) {
+      setLocalSubmittedDidApply(didApply);
+      setLocalSubmittedText(text);
       setSyncStatus(
         json.sync_status === "retry_queued" ? "retry_queued" : "synced"
       );
@@ -167,13 +179,19 @@ export function ReflectView({
       setPhase("answer");
     } else {
       setPhase("fallen_through");
-      setTimeout(() => router.push("/today"), 1500);
+      setTimeout(() => {
+        onGroveUpdate?.();
+        setPhase("idle");
+      }, 1500);
     }
   }
 
   function handlePlantTree() {
     setPhase("planting");
-    setTimeout(() => router.push("/today"), 1500);
+    setTimeout(() => {
+      onGroveUpdate?.();
+      setPhase("idle");
+    }, 1500);
   }
 
   if (phase === "awaiting_answer") {
@@ -240,9 +258,9 @@ export function ReflectView({
 
   if (alreadySubmitted) {
     const didApplyLabel =
-      existingDidApply === "yes_fully"
+      effectiveDidApply === "yes_fully"
         ? "Yes, fully"
-        : existingDidApply === "partly"
+        : effectiveDidApply === "partly"
           ? "Partly"
           : "Not today";
     return (
@@ -276,7 +294,7 @@ export function ReflectView({
           className="text-sm leading-relaxed"
           style={{ color: "var(--foreground)" }}
         >
-          {existingText}
+          {effectiveText}
         </p>
       </div>
     );
