@@ -15,7 +15,7 @@
     "answered-reflection:experiment": "node --env-file=.env.local node_modules/.bin/tsx scripts/try-answered-reflection.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.0",
+    "@anthropic-ai/sdk": "^0.137.0",
     "@quranjs/api": "^2.2.0",
     "@radix-ui/react-slider": "^1.3.6",
     "@radix-ui/react-slot": "^1.2.4",
@@ -29,7 +29,7 @@
     "iron-session": "^8.0.4",
     "isomorphic-dompurify": "^3.12.0",
     "lucide-react": "^1.11.0",
-    "next": "16.2.4",
+    "next": "16.3.8",
     "ollama": "^0.6.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -52,6 +52,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vitest": "^1.6.1"
+    "vitest": "^4.1.11"
   }
 }
